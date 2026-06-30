@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý thực đơn - Bún Bò Gia Truyền</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="admin-layout">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div>
+                <div class="admin-sidebar-header">
+                    <i class="fa-solid fa-bowl-hot"></i> Bún Bò POS
+                </div>
+                <ul class="admin-menu-list">
+                    <li class="admin-menu-item">
+                        <a href="/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Tổng quan</a>
+                    </li>
+                    <li class="admin-menu-item active">
+                        <a href="/admin/menu"><i class="fa-solid fa-utensils"></i> Thực đơn</a>
+                    </li>
+                    <li class="admin-menu-item">
+                        <a href="/admin/inventory"><i class="fa-solid fa-warehouse"></i> Kho nguyên liệu</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:0.5rem; width:100%;">
+                <a href="/" class="btn-secondary" style="text-align:center; padding: 0.6rem; border-color: rgba(255,255,255,0.4); color: white; background: transparent;">
+                    <i class="fa-solid fa-arrow-left"></i> Về trang khách
+                </a>
+                <a href="/logout" class="btn-secondary" style="text-align:center; padding: 0.6rem; border-color: var(--danger); color: white; background: var(--danger); box-shadow:none;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-content" style="display:grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+            
+            <!-- LEFT COLUMN: DISH LIST -->
+            <div>
+                <h2 style="margin-bottom: 2rem; font-size:2rem;"><i class="fa-solid fa-utensils"></i> Danh Sách Thực Đơn</h2>
+                
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Ảnh</th>
+                            <th>Tên món</th>
+                            <th>Phân loại</th>
+                            <th>Đơn giá</th>
+                            <th>Trạng thái bán</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="dish : ${dishes}">
+                            <td>
+                                <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" th:src="${dish.imageUrl}" alt="food" style="width: 50px; height: 50px; object-fit: cover; border-radius: var(--radius-sm);">
+                                <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" style="width: 50px; height: 50px; background-color:#EEE; display:flex; align-items:center; justify-content:center; border-radius: var(--radius-sm);">
+                                    <i class="fa-solid fa-bowl-rice" style="color:var(--text-light);"></i>
+                                </div>
+                            </td>
+                            <td><strong th:text="${dish.name}">Bún Bò Tái Nạm</strong></td>
+                            <td th:text="${dish.category}">Bún Bò</td>
+                            <td th:text="${#numbers.formatDecimal(dish.price, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-weight: 700; color:var(--primary);">55,000 đ</td>
+                            <td>
+                                <!-- Active status toggle -->
+                                <form th:action="@{/admin/menu/toggle/{id}(id=${dish.id})}" method="post">
+                                    <button type="submit" class="qty-btn" style="width:auto; height:auto; padding: 0.25rem 0.75rem; border-radius:var(--radius-sm); border:none; font-weight:600; cursor:pointer;"
+                                            th:classappend="${dish.isAvailable} ? 'status-completed' : 'status-cancelled'"
+                                            th:text="${dish.isAvailable ? 'Đang bán' : 'Ngưng bán'}">
+                                        Đang bán
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <button type="button" class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"
+                                            th:attr="onclick=|editDish(${dish.id}, '${dish.name}', ${dish.price}, '${dish.category}', '${dish.imageUrl}')|">
+                                        Sửa
+                                    </button>
+                                    <form th:action="@{/admin/menu/delete/{id}(id=${dish.id})}" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa món này chứ?')">
+                                        <button type="submit" class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-color:var(--danger); color:var(--danger);">
+                                            Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RIGHT COLUMN: ADD/EDIT FORM -->
+            <div>
+                <div style="background-color: white; padding: 2rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); position:sticky; top: 100px;">
+                    <h3 id="form-title" style="margin-bottom: 1.5rem; font-size:1.3rem; color:var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        <i class="fa-solid fa-plus-circle"></i> Thêm Món Mới
+                    </h3>
+                    
+                    <form action="/admin/menu/save" method="post">
+                        <!-- Hidden ID field for edit mode -->
+                        <input type="hidden" name="id" id="dish-id">
+
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Tên món ăn:</label>
+                            <input type="text" name="name" id="dish-name" required placeholder="Nhập tên món ăn..." 
+                                   style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Giá bán (đ):</label>
+                            <input type="number" name="price" id="dish-price" required placeholder="Ví dụ: 50000" 
+                                   style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Phân loại:</label>
+                            <select name="category" id="dish-category" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                                <option value="Bún Bò">Bún Bò</option>
+                                <option value="Món thêm">Món thêm</option>
+                                <option value="Nước uống">Nước uống</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display:block; font-weight:600; margin-bottom:0.25rem;">Link ảnh minh họa:</label>
+                            <input type="text" name="imageUrl" id="dish-image" placeholder="URL hình ảnh (nếu có)..." 
+                                   style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                            <button type="submit" class="btn-primary" style="justify-content: center;">
+                                <i class="fa-solid fa-save"></i> Lưu món ăn
+                            </button>
+                            <button type="button" id="btn-cancel-edit" onclick="resetForm()" class="btn-secondary" style="display:none; justify-content: center;">
+                                Hủy sửa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- JS Helper for editing -->
+    <script th:inline="javascript">
+        function editDish(id, name, price, category, imageUrl) {
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Cập Nhật Món Ăn';
+            document.getElementById('dish-id').value = id;
+            document.getElementById('dish-name').value = name;
+            document.getElementById('dish-price').value = price;
+            document.getElementById('dish-category').value = category;
+            document.getElementById('dish-image').value = (imageUrl === 'null' || imageUrl === 'undefined') ? '' : imageUrl;
+            
+            document.getElementById('btn-cancel-edit').style.display = 'block';
+        }
+
+        function resetForm() {
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-plus-circle"></i> Thêm Món Mới';
+            document.getElementById('dish-id').value = '';
+            document.getElementById('dish-name').value = '';
+            document.getElementById('dish-price').value = '';
+            document.getElementById('dish-category').value = 'Bún Bò';
+            document.getElementById('dish-image').value = '';
+            
+            document.getElementById('btn-cancel-edit').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

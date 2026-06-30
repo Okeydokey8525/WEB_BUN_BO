@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Trang chủ')}"></head>
+<body>
+
+    <!-- Header Navbar -->
+    <header th:replace="~{fragments/layout :: navbar}"></header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Bún Bò Gia Truyền</h1>
+        <p>Hương vị đậm đà, nước cốt hầm xương 24h từ công thức bí truyền cố đô Huế.</p>
+        <a href="/menu" class="btn-primary"><i class="fa-solid fa-fire"></i> Đặt món ngay tại bàn</a>
+    </section>
+
+    <!-- Signature Dishes Highlight -->
+    <section class="menu-container">
+        <h2 class="section-title">Món Ngon Nổi Bật</h2>
+        <div class="dishes-grid" style="margin-top: 2rem;">
+            <!-- Iterate over featured dishes from model -->
+            <div class="dish-card" th:each="dish : ${featuredDishes}">
+                <div class="dish-img-wrapper">
+                    <!-- Standard placeholder fallback -->
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" th:src="${dish.imageUrl}" th:alt="${dish.name}" class="dish-img">
+                    <img th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" src="https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop" th:alt="${dish.name}" class="dish-img">
+                    <span class="dish-category-badge" th:text="${dish.category}">Bún Bò</span>
+                </div>
+                <div class="dish-info">
+                    <div>
+                        <h3 class="dish-name" th:text="${dish.name}">Bún Bò Đặc Biệt</h3>
+                        <p class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">65,000 đ</p>
+                    </div>
+                    <a th:href="@{/menu(tableId=1)}" class="btn-primary" style="justify-content: center; width: 100%;">
+                        <i class="fa-solid fa-cart-plus"></i> Đặt ngay
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Restaurant Story Section -->
+    <section class="menu-container" style="background-color: white; padding: 3rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: 5rem;">
+        <div style="display: flex; flex-wrap: wrap; gap: 2rem; align-items: center;">
+            <div style="flex: 1; min-width: 300px;">
+                <h2 style="font-size: 2.2rem; color: var(--primary); margin-bottom: 1.5rem;">Tinh Hoa Ẩm Thực Huế</h2>
+                <p style="margin-bottom: 1rem; color: var(--text-dark);">
+                    Mỗi bát bún bò tại cửa hàng chúng tôi đều kết hợp hài hòa giữa vị ngọt thanh của nước hầm xương ống bò, hương thơm nồng của sả, và chút đậm đà đặc trưng của mắm ruốc Huế.
+                </p>
+                <p style="color: var(--text-light);">
+                    Chúng tôi cam kết sử dụng nguyên liệu thịt tươi ngon đạt chuẩn mỗi ngày, kết hợp rau sống rửa sạch kĩ càng để mang tới cho quý khách bữa ăn tròn vị và an toàn vệ sinh thực phẩm nhất.
+                </p>
+            </div>
+            <div style="flex: 1; min-width: 300px; text-align: center;">
+                <img src="https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=600&auto=format&fit=crop" alt="Fresh Ingredients" style="max-width: 100%; border-radius: var(--radius-md); box-shadow: var(--shadow-md);">
+            </div>
+        </div>
+    </section>
+
+    <!-- Simple footer -->
+    <footer style="background-color: #2C3E50; color: white; text-align: center; padding: 2rem; font-size: 0.9rem;">
+        <p>&copy; 2026 Bún Bò Gia Truyền. Phục vụ với cả tấm lòng.</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>In Hóa Đơn - Bún Bò Gia Truyền</title>
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* Force body background white for print view */
+        body {
+            background-color: white;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print" style="max-width:300px; margin: 0 auto 1rem; text-align:center;">
+        <button onclick="window.print()" class="btn-primary" style="width:100%; justify-content:center; padding: 0.6rem;">
+            <i class="fa-solid fa-print"></i> Ấn để in lại hóa đơn
+        </button>
+        <p style="font-size:0.8rem; color:var(--text-light); margin-top:0.5rem;">Cửa sổ in sẽ tự động hiện lên khi tải xong.</p>
+    </div>
+
+    <!-- Thermal Ticket (80mm width) -->
+    <div class="ticket-wrapper">
+        <div class="ticket-header">
+            <h2 style="font-size: 1.25rem; font-weight:bold; margin-bottom:0.25rem;">BÚN BÒ GIA TRUYỀN</h2>
+            <p style="font-size:0.75rem;">Địa chỉ: 123 Đường Số 4, TP. Hồ Chí Minh</p>
+            <p style="font-size:0.75rem;">Điện thoại: 0987.654.321</p>
+            <h3 style="font-size: 1.1rem; font-weight:bold; margin-top:0.75rem; border-top: 1px dashed #000; padding-top:0.5rem; text-transform:uppercase;">
+                HÓA ĐƠN THANH TOÁN
+            </h3>
+        </div>
+
+        <div style="margin-bottom:0.75rem; font-size:0.8rem; border-bottom:1px dashed #000; padding-bottom:0.5rem;">
+            <div style="display:flex; justify-content:space-between;">
+                <span>Số hóa đơn:</span>
+                <span th:text="'#' + ${order.id}">#12</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Vị trí:</span>
+                <span th:text="${order.table != null ? order.table.tableNumber : 'Mang về'}">Bàn 2</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Khách hàng:</span>
+                <span th:text="${order.customerName}">Nguyễn Văn A</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Thời gian:</span>
+                <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm:ss')}">19/06/2026 18:30:15</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Thanh toán:</span>
+                <span th:text="${order.paymentMethod}">CASH</span>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="ticket-items">
+            <div th:each="item : ${order.orderItems}" class="ticket-item-row">
+                <div>
+                    <span th:text="${item.dish.name}">Bún Bò Đặc Biệt</span>
+                    <br>
+                    <span th:text="${item.quantity} + ' x ' + ${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-size:0.75rem; color:#555;">
+                        1 x 65,000 đ
+                    </span>
+                </div>
+                <span th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="align-self: flex-end; font-weight:bold;">
+                    65,000 đ
+                </span>
+            </div>
+        </div>
+
+        <!-- Total Price -->
+        <div class="ticket-total">
+            <span>TỔNG TIỀN:</span>
+            <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">65,000 đ</span>
+        </div>
+
+        <div style="text-align:center; margin-top:1.5rem; border-top:1px dashed #000; padding-top:0.75rem; font-size:0.8rem;">
+            <p>Cảm ơn quý khách!</p>
+            <p>Hẹn gặp lại quý khách lần sau!</p>
+        </div>
+    </div>
+
+    <!-- Auto Print Trigger Script -->
+    <script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+            setTimeout(function() {
+                window.print();
+            }, 500); // Small timeout to ensure fonts load
+        });
+    </script>
+</body>
+</html>

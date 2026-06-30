@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Thực đơn')}"></head>
+<body>
+
+    <!-- Header Navbar -->
+    <header th:replace="~{fragments/layout :: navbar}"></header>
+
+    <div class="menu-container">
+        <!-- Error Alert -->
+        <div th:if="${param.error}" class="alert-warning-toast" style="border-left-color: var(--danger); background-color: #FDEDEC;">
+            <i class="fa-solid fa-circle-exclamation" style="color: var(--danger);"></i>
+            <span>Đã xảy ra lỗi khi đặt món. Vui lòng chọn bàn và thử lại!</span>
+        </div>
+
+        <h2 class="section-title">Thực Đơn Của Quán</h2>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+            <button class="category-btn active" onclick="filterCategory('All')">Tất cả</button>
+            <button class="category-btn" onclick="filterCategory('Bún Bò')">Bún Bò</button>
+            <button class="category-btn" onclick="filterCategory('Món thêm')">Món thêm</button>
+            <button class="category-btn" onclick="filterCategory('Nước uống')">Nước uống</button>
+        </div>
+
+        <!-- Dishes Grid -->
+        <div class="dishes-grid">
+            <div class="dish-card" th:each="dish : ${dishes}" th:attr="data-category=${dish.category}">
+                <div class="dish-img-wrapper">
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" th:src="${dish.imageUrl}" th:alt="${dish.name}" class="dish-img">
+                    <img th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" src="https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop" th:alt="${dish.name}" class="dish-img">
+                    <span class="dish-category-badge" th:text="${dish.category}">Bún Bò</span>
+                </div>
+                <div class="dish-info">
+                    <div>
+                        <h3 class="dish-name" th:text="${dish.name}">Bún Bò Đặc Biệt</h3>
+                        <p class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">65,000 đ</p>
+                    </div>
+                    <button class="btn-primary" style="justify-content: center; width: 100%;" 
+                            th:attr="onclick=|addToCart(${dish.id}, '${dish.name}', ${dish.price})|">
+                        <i class="fa-solid fa-cart-plus"></i> Chọn món
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CART SIDEBAR SLIDEOUT -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fa-solid fa-shopping-basket" style="color: var(--primary);"></i> Đơn đặt món</h3>
+            <button class="qty-btn" onclick="toggleCartSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Scrollable list of items -->
+        <div id="cart-items-container" class="cart-items-list">
+            <!-- Dynamic JavaScript content here -->
+            <p style="text-align: center; color: var(--text-light); margin-top: 2rem;">Giỏ hàng của bạn đang trống.</p>
+        </div>
+
+        <!-- Checkout Form inside Cart -->
+        <form action="/order/place" method="post" onsubmit="return validateCheckoutForm()">
+            <!-- Table Selection -->
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.25rem;"><i class="fa-solid fa-chair" style="color: var(--secondary);"></i> Chọn số Bàn của bạn:</label>
+                <select name="tableId" id="checkout-table" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    <option value="">-- Chọn số bàn --</option>
+                    <option th:each="tbl : ${tables}" th:value="${tbl.id}" th:text="${tbl.tableNumber}" 
+                            th:selected="${tbl.id == selectedTableId}">Bàn 1</option>
+                </select>
+            </div>
+
+            <!-- Customer Name -->
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.25rem;"><i class="fa-solid fa-user"></i> Tên người đặt món:</label>
+                <input type="text" name="customerName" id="checkout-name" required placeholder="Nhập tên của bạn..." 
+                       style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+
+            <!-- Payment Method -->
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.25rem;"><i class="fa-solid fa-wallet"></i> Phương thức thanh toán:</label>
+                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                        <input type="radio" name="paymentMethod" value="CASH" checked> Tiền mặt tại quầy
+                    </label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                        <input type="radio" name="paymentMethod" value="VIETQR"> Chuyển khoản VietQR
+                    </label>
+                </div>
+            </div>
+
+            <!-- Total price row -->
+            <div class="cart-total-section">
+                <div class="cart-total-row">
+                    <span>Tổng cộng:</span>
+                    <span id="cart-total-price">0 đ</span>
+                </div>
+            </div>
+
+            <!-- Hidden input for serialized JSON cart items -->
+            <input type="hidden" name="cartJson" id="cart-json-input">
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+                <i class="fa-solid fa-paper-plane"></i> Gửi Yêu Cầu Gọi Món
+            </button>
+        </form>
+    </div>
+
+    <!-- Javascript Cart Logic -->
+    <script th:inline="javascript">
+        let cart = [];
+
+        // Load cart from localStorage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedCart = localStorage.getItem('bunbo_cart');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+                updateCartUI();
+            }
+        });
+
+        function toggleCartSidebar() {
+            const sidebar = document.getElementById('cart-sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        function filterCategory(category) {
+            // Update active button styling
+            const buttons = document.querySelectorAll('.category-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Filter cards
+            const cards = document.querySelectorAll('.dish-card');
+            cards.forEach(card => {
+                const cardCat = card.getAttribute('data-category');
+                if (category === 'All' || cardCat === category) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function addToCart(id, name, price) {
+            const existingItem = cart.find(item => item.dishId === id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    dishId: id,
+                    name: name,
+                    price: price,
+                    quantity: 1
+                });
+            }
+            updateCartUI();
+            
+            // Auto open cart when adding an item
+            const sidebar = document.getElementById('cart-sidebar');
+            if (!sidebar.classList.contains('open')) {
+                sidebar.classList.add('open');
+            }
+        }
+
+        function changeQuantity(id, delta) {
+            const item = cart.find(item => item.dishId === id);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    cart = cart.filter(i => i.dishId !== id);
+                }
+                updateCartUI();
+            }
+        }
+
+        function updateCartUI() {
+            // Save to local storage
+            localStorage.setItem('bunbo_cart', JSON.stringify(cart));
+
+            // Badge count
+            const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const badge = document.getElementById('cart-badge-count');
+            if (totalQty > 0) {
+                badge.innerText = totalQty;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            // Items List
+            const container = document.getElementById('cart-items-container');
+            if (cart.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-light); margin-top: 2rem;">Giỏ hàng của bạn đang trống.</p>';
+                document.getElementById('cart-total-price').innerText = '0 đ';
+                return;
+            }
+
+            let html = '';
+            let totalAmount = 0;
+            
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                totalAmount += itemTotal;
+                
+                html += `
+                    <div class="cart-item">
+                        <div class="cart-item-details">
+                            <h4>${item.name}</h4>
+                            <div class="cart-item-qty">
+                                <button type="button" class="qty-btn" onclick="changeQuantity(${item.dishId}, -1)">-</button>
+                                <span>${item.quantity}</span>
+                                <button type="button" class="qty-btn" onclick="changeQuantity(${item.dishId}, 1)">+</button>
+                            </div>
+                        </div>
+                        <span style="font-weight: 600; color: var(--primary);">${itemTotal.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('cart-total-price').innerText = totalAmount.toLocaleString('vi-VN') + ' đ';
+            
+            // Set hidden field JSON
+            document.getElementById('cart-json-input').value = JSON.stringify(cart);
+        }
+
+        function validateCheckoutForm() {
+            const table = document.getElementById('checkout-table').value;
+            if (!table) {
+                alert('Vui lòng chọn số bàn của bạn trước khi gửi đặt món!');
+                return false;
+            }
+            if (cart.length === 0) {
+                alert('Giỏ hàng trống! Hãy chọn ít nhất một món ăn.');
+                return false;
+            }
+            
+            // Clear cart from localstorage on successful submit
+            localStorage.removeItem('bunbo_cart');
+            return true;
+        }
+    </script>
+</body>
+</html>
