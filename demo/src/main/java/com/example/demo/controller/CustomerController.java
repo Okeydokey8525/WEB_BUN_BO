@@ -39,10 +39,6 @@ public class CustomerController {
         return "customer/index";
     }
 
-    @GetMapping("/login")
-    public String login() {
-        return "login";
-    }
 
     @GetMapping("/menu")
     public String menu(@RequestParam(value = "tableId", required = false) Long tableId, Model model) {

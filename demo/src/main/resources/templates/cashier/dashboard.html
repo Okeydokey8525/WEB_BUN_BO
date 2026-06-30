@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thu ngân - Quản lý Bún Bò</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .cashier-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 992px) {
+            .cashier-layout {
+                grid-template-columns: 2fr 3fr;
+            }
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Table Grid */
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .table-node {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px 5px;
+            text-align: center;
+            cursor: pointer;
+            color: #333;
+            text-decoration: none;
+        }
+        .table-node.status-OCCUPIED {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Orders List */
+        .order-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-info h3 { margin: 0 0 10px 0; }
+        .order-total {
+            font-size: 1.2em;
+            color: var(--primary-color);
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .btn-pay {
+            background: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1em;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-pay:hover { background: #219a52; }
+    </style>
+</head>
+<body>
+    <div th:replace="fragments/layout :: header"></div>
+
+    <main class="container">
+        <h2><i class="fas fa-cash-register"></i> Quầy Thu Ngân</h2>
+
+        <div class="cashier-layout">
+            <!-- Left: Table Status -->
+            <div class="panel">
+                <h3>Trạng thái Bàn</h3>
+                <div class="table-grid">
+                    <div th:each="table : ${tables}" class="table-node" th:classappend="'status-' + ${table.status}">
+                        <div th:text="${table.name}">Bàn 1</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Unpaid Orders -->
+            <div class="panel">
+                <h3>Đơn hàng chờ thanh toán</h3>
+
+                <div th:if="${#lists.isEmpty(unpaidOrders)}" style="text-align: center; padding: 30px; color: #666;">
+                    Không có đơn hàng nào cần thanh toán.
+                </div>
+
+                <div th:each="order : ${unpaidOrders}" class="order-card">
+                    <div class="order-info">
+                        <h3 th:text="${order.table != null ? order.table.name : 'Khách mang về'}">Bàn 1</h3>
+                        <div>Mã đơn: <strong th:text="'#' + ${order.id}">#1</strong></div>
+                        <div class="order-total" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">150,000 đ</div>
+                        <div style="font-size: 0.9em; color: #666;">
+                            Phương thức: <span th:text="${order.paymentMethod}">CASH</span>
+                        </div>
+                    </div>
+                    <div>
+                        <a th:href="@{/admin/order/{id}(id=${order.id})}" class="btn-pay"><i class="fas fa-file-invoice-dollar"></i> Xử lý & In Bill</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

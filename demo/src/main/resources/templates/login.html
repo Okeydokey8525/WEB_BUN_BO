@@ -2,114 +2,97 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập hệ thống - Bún Bò Gia Truyền</title>
-    <!-- FontAwesome Icons -->
+    <title>Đăng nhập - Quản lý Bún Bò</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="/css/style.css">
     <style>
         body {
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, rgba(192, 57, 43, 0.05), rgba(211, 84, 0, 0.08)), var(--bg-cream);
+            background-color: #f8f9fa;
         }
         .login-card {
-            background-color: white;
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-lg);
-            width: 420px;
-            max-width: 90%;
-            padding: 3rem 2.5rem;
-            border: 1px solid var(--border-color);
-            text-align: center;
-        }
-        .login-logo {
-            font-size: 3rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-        .input-group {
-            margin-bottom: 1.25rem;
-            text-align: left;
-        }
-        .input-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.35rem;
-            font-size: 0.9rem;
-        }
-        .input-control {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border-color);
-            font-family: var(--font-body);
-            font-size: 0.95rem;
+            max-width: 400px;
         }
-        .input-control:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+        .login-title {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: 700;
         }
-        .error-message {
-            background-color: #FDEDEC;
-            color: var(--danger);
-            border-left: 4px solid var(--danger);
-            padding: 0.75rem;
-            border-radius: var(--radius-sm);
-            margin-bottom: 1.5rem;
-            text-align: left;
-            font-size: 0.85rem;
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
             font-weight: 500;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-login:hover {
+            background: var(--dark-color);
+        }
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-
     <div class="login-card">
-        <div class="login-logo">
-            <i class="fa-solid fa-bowl-hot"></i>
-        </div>
-        <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem; font-family: var(--font-heading);">Đăng Nhập POS</h2>
-        <p style="color: var(--text-light); margin-bottom: 2rem; font-size: 0.9rem;">Hệ thống quản trị và phục vụ nội bộ quán bún bò</p>
+        <h2 class="login-title"><i class="fas fa-bowl-food"></i> Hệ Thống Quản Lý Bún Bò</h2>
 
-        <!-- Error Handler -->
-        <div th:if="${param.error}" class="error-message">
-            <i class="fa-solid fa-circle-exclamation"></i> Tên đăng nhập hoặc mật khẩu không chính xác!
+        <div th:if="${param.error}" class="alert-error">
+            Sai tên đăng nhập hoặc mật khẩu!
         </div>
 
-        <div th:if="${param.logout}" class="error-message" style="background-color: #EAF2F8; color: #2980B9; border-left-color: #2980B9;">
-            <i class="fa-solid fa-info-circle"></i> Đăng xuất thành công.
+        <div th:if="${param.logout}" style="background: #e8f5e9; color: #2e7d32; padding: 12px; border-radius: 6px; margin-bottom: 20px; text-align: center;">
+            Bạn đã đăng xuất thành công.
         </div>
 
-        <!-- Login Form -->
         <form th:action="@{/login}" method="post">
-            <div class="input-group">
-                <label for="username"><i class="fa-solid fa-user"></i> Tên đăng nhập</label>
-                <input type="text" id="username" name="username" class="input-control" required placeholder="Nhập username..." autofocus>
+            <div class="form-group">
+                <label for="username">Tên đăng nhập</label>
+                <input type="text" id="username" name="username" class="form-control" required autofocus>
             </div>
 
-            <div class="input-group">
-                <label for="password"><i class="fa-solid fa-lock"></i> Mật khẩu</label>
-                <input type="password" id="password" name="password" class="input-control" required placeholder="Nhập mật khẩu...">
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <input type="password" id="password" name="password" class="form-control" required>
             </div>
 
-            <!-- Remember me -->
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; font-size:0.85rem;">
-                <label style="cursor:pointer; display:flex; align-items:center; gap:0.25rem; color:var(--text-light);">
-                    <input type="checkbox" name="remember-me"> Ghi nhớ đăng nhập
-                </label>
-                <a href="/" style="color:var(--primary); font-weight:600;">Quay lại trang chủ</a>
-            </div>
-
-            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 0.9rem;">
-                <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập
-            </button>
+            <button type="submit" class="btn-login">Đăng Nhập</button>
         </form>
     </div>
-
 </body>
 </html>

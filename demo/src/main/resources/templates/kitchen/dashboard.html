@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bếp - Quản lý Bún Bò</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .order-card {
+            background: white;
+            border-left: 5px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .order-table {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: var(--dark-color);
+        }
+        .dish-details {
+            margin-bottom: 15px;
+        }
+        .dish-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .dish-qty {
+            color: #666;
+        }
+        .btn-ready {
+            width: 100%;
+            padding: 10px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn-ready:hover {
+            background: #219a52;
+        }
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="fragments/layout :: header"></div>
+
+    <main class="container">
+        <h2><i class="fas fa-fire"></i> Màn Hình Bếp - Món Đang Chờ</h2>
+
+        <div class="kanban-board">
+            <div th:if="${#lists.isEmpty(pendingItems)}" class="empty-state">
+                <i class="fas fa-check-circle" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
+                <h3>Hiện tại không có món nào cần làm!</h3>
+            </div>
+
+            <div th:each="item : ${pendingItems}" class="order-card">
+                <div class="order-header">
+                    <span class="order-table" th:text="${item.order.table != null ? item.order.table.name : 'Khách mang về'}">Bàn 1</span>
+                    <span style="color: #666; font-size: 0.9em;" th:text="${#temporals.format(item.order.createdAt, 'HH:mm')}">12:30</span>
+                </div>
+                <div class="dish-details">
+                    <div class="dish-name" th:text="${item.dish.name}">Bún Bò Đặc Biệt</div>
+                    <div class="dish-qty">Số lượng: <strong th:text="${item.quantity}">1</strong></div>
+                </div>
+                <form th:action="@{/kitchen/ready/{id}(id=${item.id})}" method="post">
+                    <button type="submit" class="btn-ready"><i class="fas fa-check"></i> Đã Nấu Xong</button>
+                </form>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
