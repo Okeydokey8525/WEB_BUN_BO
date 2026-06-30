@@ -49,7 +49,7 @@
     <div id="cart-sidebar" class="cart-sidebar">
         <div class="cart-header">
             <h3><i class="fa-solid fa-shopping-basket" style="color: var(--primary);"></i> Đơn đặt món</h3>
-            <button class="qty-btn" onclick="toggleCartSidebar()"><i class="fa-solid fa-xmark"></i></button>
+            <button class="qty-btn" aria-label="Đóng giỏ hàng" onclick="toggleCartSidebar()"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <!-- Scrollable list of items -->
@@ -209,9 +209,9 @@
                         <div class="cart-item-details">
                             <h4>${item.name}</h4>
                             <div class="cart-item-qty">
-                                <button type="button" class="qty-btn" onclick="changeQuantity(${item.dishId}, -1)">-</button>
+                                <button type="button" class="qty-btn" aria-label="Giảm số lượng" onclick="changeQuantity(${item.dishId}, -1)">-</button>
                                 <span>${item.quantity}</span>
-                                <button type="button" class="qty-btn" onclick="changeQuantity(${item.dishId}, 1)">+</button>
+                                <button type="button" class="qty-btn" aria-label="Tăng số lượng" onclick="changeQuantity(${item.dishId}, 1)">+</button>
                             </div>
                         </div>
                         <span style="font-weight: 600; color: var(--primary);">${itemTotal.toLocaleString('vi-VN')} đ</span>

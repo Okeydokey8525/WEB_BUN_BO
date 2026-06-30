@@ -1,0 +1,3 @@
+## 2024-05-15 - Standardize ARIA labels for icon-only buttons
+**Learning:** Found multiple instances of icon-only interactive elements (like the cart close button fa-xmark or quantity adjustment buttons) that lacked accessibility contexts, meaning screen readers would only announce them as "button".
+**Action:** Added descriptive Vietnamese `aria-label` attributes (e.g., "Đóng giỏ hàng", "Tăng số lượng", "Giảm số lượng") and keyboard accessibility attributes (`role="button"`, `tabindex="0"`) to all icon-only interactions. Will proactively check for `aria-label`s on any `<button>` or `<a>` element that only contains an `<i>` child in this app.
