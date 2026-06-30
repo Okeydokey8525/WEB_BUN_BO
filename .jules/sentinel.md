@@ -1,0 +1,4 @@
+## 2024-05-15 - Implement CSRF Protection for Logout
+**Vulnerability:** Found logout actions triggered via GET requests using simple `<a>` links (e.g., `<a href="/logout">`) in the admin dashboard and menu pages.
+**Learning:** While Spring Security protects against CSRF for POST requests by default, relying on GET requests for state-changing actions like logout bypasses this protection entirely. An attacker could force a logged-in user to log out by embedding an image or link to the `/logout` endpoint on a malicious site, causing an unintended denial of service or disrupting workflow.
+**Prevention:** Always use `POST` forms for state-changing endpoints (like logout) and leverage Thymeleaf's `th:action` to automatically inject CSRF tokens. Replaced `<a href="/logout">` with `<form th:action="@{/logout}" method="post"><button type="submit">...</button></form>`.
