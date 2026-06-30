@@ -34,17 +34,21 @@ public class DataInitializer {
             }
 
             // 2. Seed Roles if empty
-            Role adminRole, managerRole, staffRole, customerRole;
+            Role adminRole, cashierRole, waiterRole, kitchenRole, inventoryRole, customerRole;
             if (roleRepository.count() == 0) {
                 adminRole = roleRepository.save(new Role(null, "ROLE_ADMIN"));
-                managerRole = roleRepository.save(new Role(null, "ROLE_MANAGER"));
-                staffRole = roleRepository.save(new Role(null, "ROLE_STAFF"));
+                cashierRole = roleRepository.save(new Role(null, "ROLE_CASHIER"));
+                waiterRole = roleRepository.save(new Role(null, "ROLE_WAITER"));
+                kitchenRole = roleRepository.save(new Role(null, "ROLE_KITCHEN"));
+                inventoryRole = roleRepository.save(new Role(null, "ROLE_INVENTORY"));
                 customerRole = roleRepository.save(new Role(null, "ROLE_CUSTOMER"));
                 System.out.println("--> Seeded security Roles successfully!");
             } else {
                 adminRole = roleRepository.findByName("ROLE_ADMIN").orElse(null);
-                managerRole = roleRepository.findByName("ROLE_MANAGER").orElse(null);
-                staffRole = roleRepository.findByName("ROLE_STAFF").orElse(null);
+                cashierRole = roleRepository.findByName("ROLE_CASHIER").orElse(null);
+                waiterRole = roleRepository.findByName("ROLE_WAITER").orElse(null);
+                kitchenRole = roleRepository.findByName("ROLE_KITCHEN").orElse(null);
+                inventoryRole = roleRepository.findByName("ROLE_INVENTORY").orElse(null);
                 customerRole = roleRepository.findByName("ROLE_CUSTOMER").orElse(null);
             }
 
@@ -52,9 +56,11 @@ public class DataInitializer {
             if (userRepository.count() == 0 && adminRole != null) {
                 // BCrypt hash of "admin123" is "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e"
                 userRepository.save(new User(null, "admin", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Chủ cửa hàng (Admin)", adminRole, defaultBranch, true));
-                userRepository.save(new User(null, "manager", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Quản lý cơ sở", managerRole, defaultBranch, true));
-                userRepository.save(new User(null, "staff", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên phục vụ", staffRole, defaultBranch, true));
-                System.out.println("--> Seeded default Users (admin, manager, staff) successfully!");
+                userRepository.save(new User(null, "cashier", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên Thu ngân", cashierRole, defaultBranch, true));
+                userRepository.save(new User(null, "waiter", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên Phục vụ", waiterRole, defaultBranch, true));
+                userRepository.save(new User(null, "kitchen", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên Bếp", kitchenRole, defaultBranch, true));
+                userRepository.save(new User(null, "inventory", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên Kho", inventoryRole, defaultBranch, true));
+                System.out.println("--> Seeded default Users (admin, cashier, waiter, kitchen, inventory) successfully!");
             }
 
             // 4. Seed Dishes if empty

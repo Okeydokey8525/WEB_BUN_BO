@@ -16,4 +16,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByBranchIdAndStatus(Long branchId, String status);
     List<Order> findByBranchIdOrderByCreatedAtDesc(Long branchId);
     List<Order> findByBranchIdAndTableIdAndStatusNot(Long branchId, Long tableId, String status);
+    List<Order> findByPaymentStatusAndStatusNot(String paymentStatus, String status);
 }

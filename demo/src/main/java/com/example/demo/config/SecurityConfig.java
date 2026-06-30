@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final CustomAuthenticationSuccessHandler successHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -43,15 +44,18 @@ public class SecurityConfig {
                     "/css/**",
                     "/js/**",
                     "/images/**",
-                    "/h2-console/**"
+                    "/h2-console/**",
+                    "/api/kitchen/**"
                 ).permitAll()
-                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "MANAGER")
-                .requestMatchers("/kitchen/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/cashier/**").hasAnyRole("ADMIN", "CASHIER")
+                .requestMatchers("/waiter/**").hasAnyRole("ADMIN", "WAITER")
+                .requestMatchers("/kitchen/**").hasAnyRole("ADMIN", "KITCHEN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/admin/dashboard", true)
+                .successHandler(successHandler)
                 .permitAll()
             )
             .logout(logout -> logout

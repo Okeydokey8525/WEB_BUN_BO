@@ -29,5 +29,10 @@ public class OrderItem {
     private Integer quantity;
     
     @Column(nullable = false)
-    private Double price; // capture price at ordering time
+    private Double price;
+
+    @Column(nullable = false)
+    private String status = "PENDING"; // PENDING, READY, SERVED
+
+    // capture price at ordering time
 }
