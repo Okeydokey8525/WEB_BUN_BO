@@ -20,7 +20,8 @@ public class DataInitializer {
             DishRepository dishRepository,
             RestaurantTableRepository tableRepository,
             InventoryRepository inventoryRepository,
-            RecipeRepository recipeRepository) {
+            RecipeRepository recipeRepository,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         return args -> {
             
             // 1. Seed Branch if empty
@@ -54,12 +55,12 @@ public class DataInitializer {
 
             // 3. Seed Users if empty (using BCrypt passwords)
             if (userRepository.count() == 0 && adminRole != null) {
-                // BCrypt hash of "admin123" is "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e"
-                userRepository.save(new User(null, "admin", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Chủ cửa hàng (Admin)", adminRole, defaultBranch, true));
-                userRepository.save(new User(null, "cashier", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên Thu ngân", cashierRole, defaultBranch, true));
-                userRepository.save(new User(null, "waiter", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên Phục vụ", waiterRole, defaultBranch, true));
-                userRepository.save(new User(null, "kitchen", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên Bếp", kitchenRole, defaultBranch, true));
-                userRepository.save(new User(null, "inventory", "$2a$10$dXJ3ADWyyTXmJ.A9.Dk6A.T84KqD1E5i0aB1XpSihHpxfN6PZqA9e", "Nhân viên Kho", inventoryRole, defaultBranch, true));
+                String encodedPassword = passwordEncoder.encode("admin123");
+                userRepository.save(new User(null, "admin", encodedPassword, "Chủ cửa hàng (Admin)", adminRole, defaultBranch, true));
+                userRepository.save(new User(null, "cashier", encodedPassword, "Nhân viên Thu ngân", cashierRole, defaultBranch, true));
+                userRepository.save(new User(null, "waiter", encodedPassword, "Nhân viên Phục vụ", waiterRole, defaultBranch, true));
+                userRepository.save(new User(null, "kitchen", encodedPassword, "Nhân viên Bếp", kitchenRole, defaultBranch, true));
+                userRepository.save(new User(null, "inventory", encodedPassword, "Nhân viên Kho", inventoryRole, defaultBranch, true));
                 System.out.println("--> Seeded default Users (admin, cashier, waiter, kitchen, inventory) successfully!");
             }
 

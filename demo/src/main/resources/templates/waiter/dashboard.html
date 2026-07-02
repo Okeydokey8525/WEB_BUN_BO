@@ -104,7 +104,7 @@
                     <a th:each="table : ${tables}" th:href="@{/menu(tableId=${table.id})}"
                        class="table-node" th:classappend="'status-' + ${table.status}">
                         <i class="fas fa-utensils table-icon"></i>
-                        <h3 th:text="${table.name}">Bàn 1</h3>
+                        <h3 th:text="${table.tableNumber}">Bàn 1</h3>
                         <span style="font-size: 0.8em;" th:text="${table.status == 'FREE' ? 'Trống' : 'Đang phục vụ'}">Trống</span>
                     </a>
                 </div>
@@ -123,7 +123,7 @@
 
                     <div th:each="item : ${readyItems}" class="ready-item">
                         <div class="ready-info">
-                            <h4 th:text="${item.order.table != null ? item.order.table.name : 'Mang về'}">Bàn 1</h4>
+                            <h4 th:text="${item.order.table != null ? item.order.table.tableNumber : 'Mang về'}">Bàn 1</h4>
                             <p><strong th:text="${item.quantity} + 'x'">1x</strong> <span th:text="${item.dish.name}">Bún Bò</span></p>
                         </div>
                         <form th:action="@{/waiter/serve/{id}(id=${item.id})}" method="post">

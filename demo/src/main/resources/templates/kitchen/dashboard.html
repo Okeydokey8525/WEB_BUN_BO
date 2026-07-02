@@ -79,7 +79,7 @@
 
             <div th:each="item : ${pendingItems}" class="order-card">
                 <div class="order-header">
-                    <span class="order-table" th:text="${item.order.table != null ? item.order.table.name : 'Khách mang về'}">Bàn 1</span>
+                    <span class="order-table" th:text="${item.order.table != null ? item.order.table.tableNumber : 'Khách mang về'}">Bàn 1</span>
                     <span style="color: #666; font-size: 0.9em;" th:text="${#temporals.format(item.order.createdAt, 'HH:mm')}">12:30</span>
                 </div>
                 <div class="dish-details">

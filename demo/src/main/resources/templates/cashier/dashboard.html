@@ -88,7 +88,7 @@
                 <h3>Trạng thái Bàn</h3>
                 <div class="table-grid">
                     <div th:each="table : ${tables}" class="table-node" th:classappend="'status-' + ${table.status}">
-                        <div th:text="${table.name}">Bàn 1</div>
+                        <div th:text="${table.tableNumber}">Bàn 1</div>
                     </div>
                 </div>
             </div>
@@ -103,7 +103,7 @@
 
                 <div th:each="order : ${unpaidOrders}" class="order-card">
                     <div class="order-info">
-                        <h3 th:text="${order.table != null ? order.table.name : 'Khách mang về'}">Bàn 1</h3>
+                        <h3 th:text="${order.table != null ? order.table.tableNumber : 'Khách mang về'}">Bàn 1</h3>
                         <div>Mã đơn: <strong th:text="'#' + ${order.id}">#1</strong></div>
                         <div class="order-total" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">150,000 đ</div>
                         <div style="font-size: 0.9em; color: #666;">

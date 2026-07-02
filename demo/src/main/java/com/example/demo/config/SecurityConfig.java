@@ -47,6 +47,7 @@ public class SecurityConfig {
                     "/h2-console/**",
                     "/api/kitchen/**"
                 ).permitAll()
+                .requestMatchers("/admin/inventory", "/admin/inventory/**").hasAnyRole("ADMIN", "INVENTORY")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/cashier/**").hasAnyRole("ADMIN", "CASHIER")
                 .requestMatchers("/waiter/**").hasAnyRole("ADMIN", "WAITER")
