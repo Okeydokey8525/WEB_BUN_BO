@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thu ngân - Quản lý Bún Bò</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -30,19 +31,11 @@
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 10px;
         }
-        .table-node {
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 15px 5px;
-            text-align: center;
-            cursor: pointer;
-            color: #333;
-            text-decoration: none;
-        }
-        .table-node.status-OCCUPIED {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
+        /* Table Grid */
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
         }
 
         /* Orders List */
@@ -77,45 +70,56 @@
     </style>
 </head>
 <body>
-    <div th:replace="fragments/layout :: header"></div>
+<body>
+    <div class="admin-layout">
+        <aside th:replace="fragments/layout :: admin_sidebar('cashier')"></aside>
 
-    <main class="container">
-        <h2><i class="fas fa-cash-register"></i> Quầy Thu Ngân</h2>
+        <main class="admin-content">
+            <div th:replace="fragments/layout :: admin_topbar('Quầy Thu Ngân POS', 'Tìm kiếm số bàn, mã hóa đơn, số tiền...')"></div>
 
-        <div class="cashier-layout">
-            <!-- Left: Table Status -->
-            <div class="panel">
-                <h3>Trạng thái Bàn</h3>
-                <div class="table-grid">
-                    <div th:each="table : ${tables}" class="table-node" th:classappend="'status-' + ${table.status}">
-                        <div th:text="${table.tableNumber}">Bàn 1</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right: Unpaid Orders -->
-            <div class="panel">
-                <h3>Đơn hàng chờ thanh toán</h3>
-
-                <div th:if="${#lists.isEmpty(unpaidOrders)}" style="text-align: center; padding: 30px; color: #666;">
-                    Không có đơn hàng nào cần thanh toán.
-                </div>
-
-                <div th:each="order : ${unpaidOrders}" class="order-card">
-                    <div class="order-info">
-                        <h3 th:text="${order.table != null ? order.table.tableNumber : 'Khách mang về'}">Bàn 1</h3>
-                        <div>Mã đơn: <strong th:text="'#' + ${order.id}">#1</strong></div>
-                        <div class="order-total" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">150,000 đ</div>
-                        <div style="font-size: 0.9em; color: #666;">
-                            Phương thức: <span th:text="${order.paymentMethod}">CASH</span>
+            <div class="cashier-layout" style="margin-top: 1.5rem;">
+                <!-- Left: Table Status -->
+                <div class="panel" style="background:white; border-radius:var(--radius-md); padding:1.5rem; box-shadow:var(--shadow-sm);">
+                    <h3 style="margin-top:0; border-bottom:2px solid var(--bg-light); padding-bottom:0.75rem;"><i class="fa-solid fa-square-poll-horizontal"></i> Trạng thái Bàn</h3>
+                    <div class="table-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:12px;">
+                        <div th:each="table : ${tables}" class="table-node" th:classappend="'status-' + ${table.status}" th:attr="onclick=|handleTableNodeClick(${table.id}, '${table.tableNumber}', '${table.status}')|">
+                            <div style="font-size: 1.1rem; font-weight: 700;" th:text="${table.tableNumber}">Bàn 1</div>
+                            <div style="font-size: 0.75rem; opacity: 0.85; margin-top: 4px;" th:text="${table.status == 'FREE' ? 'Trống' : (table.status == 'OCCUPIED' ? 'Có khách' : 'Đang gọi')}">Trống</div>
                         </div>
                     </div>
-                    <div>
-                        <a th:href="@{/admin/order/{id}(id=${order.id})}" class="btn-pay"><i class="fas fa-file-invoice-dollar"></i> Xử lý & In Bill</a>
+                </div>
+
+                <!-- Right: Unpaid Orders -->
+                <div class="panel" style="background:white; border-radius:var(--radius-md); padding:1.5rem; box-shadow:var(--shadow-sm);">
+                    <h3 style="margin-top:0; border-bottom:2px solid var(--bg-light); padding-bottom:0.75rem;"><i class="fa-solid fa-file-invoice-dollar"></i> Đơn hàng chờ thanh toán</h3>
+
+                    <div th:if="${#lists.isEmpty(unpaidOrders)}" style="text-align: center; padding: 40px; color: #888;">
+                        <i class="fa-solid fa-check-double" style="font-size:3rem; color:var(--success); margin-bottom:1rem;"></i>
+                        <p style="margin:0; font-weight:500;">Không có đơn hàng nào cần thanh toán.</p>
+                    </div>
+
+                    <div th:each="order : ${unpaidOrders}" class="order-card" style="display:flex; justify-content:space-between; align-items:center; padding:1.25rem; border:1px solid #EEE; border-radius:var(--radius-sm); margin-bottom:1rem;">
+                        <div class="order-info">
+                            <h3 th:text="${order.table != null ? order.table.tableNumber : 'Khách mang về'}" style="margin:0 0 0.5rem 0; color:var(--text-dark);">Bàn 1</h3>
+                            <div style="font-size:0.95rem; color:var(--text-light);">Mã đơn: <strong style="color:var(--text-dark);" th:text="'#' + ${order.id}">#1</strong></div>
+                            <div class="order-total" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-size:1.3rem; font-weight:700; color:var(--primary); margin:0.4rem 0;">150,000 đ</div>
+                            <div style="font-size: 0.85em; color: #777; background:var(--bg-light); padding:0.2rem 0.6rem; border-radius:4px; display:inline-block;">
+                                Phương thức: <strong th:text="${order.paymentMethod}">CASH</strong>
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
+                            <form th:if="${order.paymentStatus == 'UNPAID'}" th:action="@{/admin/order/{id}/mark-paid(id=${order.id})}" method="post" style="margin:0;">
+                                <button type="submit" class="btn-pay" style="background:linear-gradient(135deg, #27ae60, #1e8449); color:white; padding:0.6rem 1rem; border-radius:var(--radius-sm); font-weight:600; border:none; cursor:pointer; box-shadow:0 4px 10px rgba(39,174,96,0.25); display:inline-flex; align-items:center; gap:6px; font-size:0.9rem;"><i class="fas fa-check-circle"></i> Đã thu tiền</button>
+                            </form>
+                            <span th:if="${order.paymentStatus == 'PAID'}" style="padding:0.5rem 0.8rem; background:#E8F8F5; color:#27AE60; font-weight:700; border-radius:var(--radius-sm); border:1px solid #27AE60; display:inline-flex; align-items:center; gap:6px; font-size:0.85rem;">
+                                <i class="fa-solid fa-circle-check"></i> Đã thanh toán
+                            </span>
+                            <a th:href="@{/admin/order/{id}/print(id=${order.id})}" style="background:linear-gradient(135deg, #f39c12, #d68910); color:white; padding:0.6rem 1rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; box-shadow:0 4px 10px rgba(243,156,18,0.25); display:inline-flex; align-items:center; gap:6px; font-size:0.9rem;"><i class="fas fa-print"></i> In Hóa Đơn</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
 </body>
 </html>

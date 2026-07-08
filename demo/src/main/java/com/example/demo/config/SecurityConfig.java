@@ -1,6 +1,5 @@
 package com.example.demo.config;
 
-import com.example.demo.service.impl.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +15,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomUserDetailsService userDetailsService;
     private final CustomAuthenticationSuccessHandler successHandler;
 
     @Bean
@@ -30,22 +28,27 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/h2-console/**")
                 .ignoringRequestMatchers("/api/**")
-                .ignoringRequestMatchers("/order/place") // permit customer cart forms without CSRF for simplified local testing
+                .ignoringRequestMatchers("/order/place", "/register", "/forgot-password", "/profile/**", "/api/favorites/**")
             )
             .headers(headers -> headers
-                .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable) // Required for H2 Console
+                .frameOptions(frame -> frame.disable()) // Required for H2 Console
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/",
                     "/menu",
+                    "/about",
+                    "/search",
+                    "/register",
+                    "/forgot-password",
                     "/order/place",
                     "/order/status/**",
                     "/css/**",
                     "/js/**",
                     "/images/**",
                     "/h2-console/**",
-                    "/api/kitchen/**"
+                    "/api/kitchen/**",
+                    "/api/favorites/**"
                 ).permitAll()
                 .requestMatchers("/admin/inventory", "/admin/inventory/**").hasAnyRole("ADMIN", "INVENTORY")
                 .requestMatchers("/admin/**").hasRole("ADMIN")

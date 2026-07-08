@@ -5,6 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
+import java.util.Set;
+import java.util.HashSet;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -23,6 +28,15 @@ public class User {
     
     private String fullName;
     
+    @Column(name = "avatar_url", length = 4000)
+    private String avatarUrl;
+    
+    private String phone;
+    
+    private String address;
+    
+    private String email;
+    
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
@@ -33,4 +47,24 @@ public class User {
     
     @Column(nullable = false)
     private boolean enabled = true;
+    
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "user_favorites",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "dish_id")
+    )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<Dish> favoriteDishes = new HashSet<>();
+
+    public User(Long id, String username, String password, String fullName, Role role, Branch branch, boolean enabled) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.fullName = fullName;
+        this.role = role;
+        this.branch = branch;
+        this.enabled = enabled;
+    }
 }

@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phục vụ - Quản lý Bún Bò</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -24,31 +25,11 @@
             gap: 15px;
             margin-bottom: 30px;
         }
-        .table-node {
-            background: #fff;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            padding: 20px 10px;
-            text-align: center;
-            cursor: pointer;
-            text-decoration: none;
-            color: #333;
-            transition: all 0.3s ease;
-        }
-        .table-node:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .table-node.status-FREE { border-color: #2ecc71; }
-        .table-node.status-OCCUPIED { border-color: var(--primary-color); background-color: #fff5f5; }
-
+        /* Table Grid */
         .table-icon {
             font-size: 24px;
             margin-bottom: 10px;
-            color: #7f8c8d;
         }
-        .status-FREE .table-icon { color: #2ecc71; }
-        .status-OCCUPIED .table-icon { color: var(--primary-color); }
 
         /* Ready Items List */
         .ready-panel {
@@ -92,48 +73,51 @@
     </style>
 </head>
 <body>
-    <div th:replace="fragments/layout :: header"></div>
+    <div class="admin-layout">
+        <aside th:replace="fragments/layout :: admin_sidebar('waiter')"></aside>
 
-    <main class="container">
-        <div class="waiter-layout">
+        <main class="admin-content">
+            <div th:replace="fragments/layout :: admin_topbar('Khu Vực Phục Vụ Bàn', 'Tìm kiếm số bàn, tên món đã xong...')"></div>
 
-            <!-- Left: Table Selection -->
-            <div>
-                <h2><i class="fas fa-chair"></i> Sơ đồ bàn</h2>
-                <div class="table-grid">
-                    <a th:each="table : ${tables}" th:href="@{/menu(tableId=${table.id})}"
-                       class="table-node" th:classappend="'status-' + ${table.status}">
-                        <i class="fas fa-utensils table-icon"></i>
-                        <h3 th:text="${table.tableNumber}">Bàn 1</h3>
-                        <span style="font-size: 0.8em;" th:text="${table.status == 'FREE' ? 'Trống' : 'Đang phục vụ'}">Trống</span>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Right: Ready Items to Serve -->
-            <div>
-                <div class="ready-panel">
-                    <h3 style="margin-top: 0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">
-                        <i class="fas fa-bell" style="color: #f39c12;"></i> Món đã xong
-                    </h3>
-
-                    <div th:if="${#lists.isEmpty(readyItems)}" style="text-align: center; color: #999; padding: 20px 0;">
-                        Chưa có món nào hoàn thành.
+            <div class="waiter-layout" style="margin-top: 1.5rem;">
+                <!-- Left: Table Selection -->
+                <div>
+                    <h2 style="margin-top:0; color:var(--text-dark);"><i class="fas fa-chair"></i> Sơ đồ bàn ăn</h2>
+                    <div class="table-grid">
+                        <a th:each="table : ${tables}" th:href="@{/menu(tableId=${table.id})}"
+                           class="table-node" th:classappend="'status-' + ${table.status}" style="text-decoration:none; padding:1.25rem; border-radius:var(--radius-sm); font-weight:600; transition:var(--transition); box-shadow:var(--shadow-sm);">
+                            <i class="fas fa-utensils table-icon" style="font-size:1.5rem; margin-bottom:8px;"></i>
+                            <h3 th:text="${table.tableNumber}" style="margin:0.25rem 0; color:inherit;">Bàn 1</h3>
+                            <span style="font-size: 0.85em; opacity:0.85;" th:text="${table.status == 'FREE' ? 'Trống' : 'Đang phục vụ'}">Trống</span>
+                        </a>
                     </div>
+                </div>
 
-                    <div th:each="item : ${readyItems}" class="ready-item">
-                        <div class="ready-info">
-                            <h4 th:text="${item.order.table != null ? item.order.table.tableNumber : 'Mang về'}">Bàn 1</h4>
-                            <p><strong th:text="${item.quantity} + 'x'">1x</strong> <span th:text="${item.dish.name}">Bún Bò</span></p>
+                <!-- Right: Ready Items to Serve -->
+                <div>
+                    <div class="ready-panel" style="background:white; border-radius:var(--radius-md); padding:1.5rem; box-shadow:var(--shadow-sm); border-top: 4px solid var(--primary);">
+                        <h3 style="margin-top: 0; border-bottom: 2px solid var(--bg-light); padding-bottom: 10px; color:var(--text-dark); display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-bell" style="color: #f39c12;"></i> Món đã chế biến xong
+                        </h3>
+
+                        <div th:if="${#lists.isEmpty(readyItems)}" style="text-align: center; color: #888; padding: 30px 0;">
+                            <i class="fa-solid fa-mug-hot" style="font-size:2.5rem; color:var(--text-light); margin-bottom:0.75rem;"></i>
+                            <p style="margin:0; font-weight:500;">Chưa có món nào hoàn thành.</p>
                         </div>
-                        <form th:action="@{/waiter/serve/{id}(id=${item.id})}" method="post">
-                            <button type="submit" class="btn-serve"><i class="fas fa-walking"></i> Phục vụ</button>
-                        </form>
+
+                        <div th:each="item : ${readyItems}" class="ready-item" style="display:flex; justify-content:space-between; align-items:center; padding:1rem 0; border-bottom:1px solid #EEE;">
+                            <div class="ready-info">
+                                <h4 th:text="${item.order.table != null ? item.order.table.tableNumber : 'Mang về'}" style="margin:0 0 0.25rem 0; color:var(--primary); font-size:1.1rem;">Bàn 1</h4>
+                                <p style="margin:0; color:var(--text-dark);"><strong th:text="${item.quantity} + 'x'" style="color:var(--secondary); font-size:1.1rem;">1x</strong> <span th:text="${item.dish.name}" style="font-weight:600;">Bún Bò</span></p>
+                            </div>
+                            <form th:action="@{/waiter/serve/{id}(id=${item.id})}" method="post" style="margin:0;">
+                                <button type="submit" class="btn-serve" style="background:linear-gradient(135deg, var(--primary), var(--primary-dark)); color:white; border:none; padding:0.6rem 1.1rem; border-radius:var(--radius-sm); font-weight:600; cursor:pointer; box-shadow:0 3px 8px rgba(192,57,43,0.3); display:inline-flex; align-items:center; gap:6px;"><i class="fas fa-walking"></i> Phục vụ</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-
-        </div>
-    </main>
+        </main>
+    </div>
 </body>
 </html>

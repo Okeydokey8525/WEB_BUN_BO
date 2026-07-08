@@ -68,6 +68,27 @@ public class CustomerController {
         return "customer/menu";
     }
 
+    @GetMapping("/search")
+    public String search(@RequestParam(value = "keyword", required = false) String keyword,
+                         @RequestParam(value = "category", required = false) String category,
+                         @RequestParam(value = "maxPrice", required = false) Double maxPrice,
+                         @RequestParam(value = "sort", required = false) String sort,
+                         Model model) {
+        List<Dish> allDishes = dishRepository.findByIsAvailableTrue();
+        model.addAttribute("dishes", allDishes);
+        model.addAttribute("tables", tableRepository.findAll());
+        model.addAttribute("keyword", keyword != null ? keyword : "");
+        model.addAttribute("category", category != null ? category : "All");
+        model.addAttribute("maxPrice", maxPrice != null ? maxPrice : 0);
+        model.addAttribute("sort", sort != null ? sort : "default");
+        return "customer/search";
+    }
+
+    @GetMapping("/about")
+    public String aboutPage() {
+        return "customer/about";
+    }
+
     @PostMapping("/order/place")
     public String placeOrder(
             @RequestParam("tableId") Long tableId,

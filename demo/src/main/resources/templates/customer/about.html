@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Về Chúng Tôi - Bún Bò Gia Truyền')}"></head>
+<body>
+
+    <!-- Header Navbar -->
+    <header th:replace="~{fragments/layout :: navbar}"></header>
+
+    <div style="max-width: 1000px; margin: 3rem auto; padding: 0 1.5rem;">
+        <!-- Hero Title -->
+        <div style="text-align: center; margin-bottom: 3.5rem;">
+            <span style="display: inline-block; padding: 0.4rem 1.2rem; background: #FFF0ED; color: var(--primary); border-radius: 30px; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.8rem; border: 1px solid #FADBD8;">
+                <i class="fa-solid fa-heart"></i> Câu Chuyện Thương Hiệu
+            </span>
+            <h1 style="font-size: 2.8rem; color: var(--text-dark); margin: 0 0 1rem 0; font-family: var(--font-heading);">Về Bún Bò <span style="color: var(--primary);">Gia Truyền</span></h1>
+            <p style="color: var(--text-light); font-size: 1.15rem; max-width: 680px; margin: 0 auto; line-height: 1.8;">
+                Nơi hội tụ tinh hoa ẩm thực Cố Đô Huế với công thức bí truyền qua nhiều thế hệ, đem lại hương vị đậm đà, khó quên cho từng thực khách.
+            </p>
+        </div>
+
+        <!-- Founder Center Section (As Requested by User) -->
+        <div style="background: white; border-radius: var(--radius-lg); padding: 3rem 2rem; box-shadow: var(--shadow-md); text-align: center; margin-bottom: 3.5rem; border-top: 5px solid var(--primary); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -30px; right: -30px; width: 150px; height: 150px; background: rgba(192, 57, 43, 0.04); border-radius: 50%; z-index: 0;"></div>
+            <div style="position: relative; z-index: 1;">
+                <!-- Round Avatar in Center -->
+                <div style="width: 170px; height: 170px; margin: 0 auto 1.5rem; position: relative;">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop" alt="Lê Đức Lương" 
+                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 5px solid white; box-shadow: 0 10px 25px rgba(192, 57, 43, 0.3);">
+                    <span style="position: absolute; bottom: 8px; right: 8px; background: var(--secondary); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; font-size: 0.9rem;" title="Người Sáng Lập">
+                        <i class="fa-solid fa-crown"></i>
+                    </span>
+                </div>
+
+                <!-- Founder Name -->
+                <h2 style="font-size: 1.9rem; color: var(--text-dark); margin: 0 0 0.3rem 0; font-family: var(--font-heading);">Lê Đức Lương</h2>
+                <p style="color: var(--secondary); font-weight: 600; font-size: 1.05rem; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 1px;">
+                    Người Sáng Lập & Bếp Trưởng
+                </p>
+                <div style="width: 60px; height: 3px; background: var(--primary); margin: 0 auto 1.5rem; border-radius: 2px;"></div>
+                <p style="color: var(--text-dark); font-size: 1.1rem; max-width: 750px; margin: 0 auto; font-style: italic; line-height: 1.8;">
+                    "Một tô bún bò ngon không chỉ đến từ nguyên liệu đắt tiền, mà đến từ sự kiên nhẫn trong 24 giờ hầm xương, sự khắt khe trong việc chọn từng cây sả, muỗng ruốc, và trên hết là cái tâm của người đầu bếp muốn trao gửi sự ấm áp đến thực khách."
+                </p>
+            </div>
+        </div>
+
+        <!-- Why Choose Us & Core Values -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 4rem;">
+            <div style="background: white; padding: 2rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--primary); transition: var(--transition);">
+                <div style="width: 50px; height: 50px; background: #FFF0ED; color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
+                    <i class="fa-solid fa-fire-burner"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem; color: var(--text-dark);">Hầm Xương 24 Giờ</h3>
+                <p style="color: var(--text-light); line-height: 1.7; font-size: 0.98rem;">
+                    Nước dùng được hầm hoàn toàn từ xương bò tươi nguyên bản trong suốt 24 tiếng đồng hồ, không dùng hóa chất hay vị ngọt nhân tạo, cho vị ngọt thanh tự nhiên.
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid var(--secondary); transition: var(--transition);">
+                <div style="width: 50px; height: 50px; background: #FEF9E7; color: var(--secondary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem; color: var(--text-dark);">Nguyên Liệu Chuẩn Huế</h3>
+                <p style="color: var(--text-light); line-height: 1.7; font-size: 0.98rem;">
+                    Mắm ruốc, ớt sa tế sa nhân và các loại rau thơm được tuyển chọn và vận chuyển trực tiếp từ Huế, đảm bảo giữ vững linh hồn ẩm thực miền Trung.
+                </p>
+            </div>
+
+            <div style="background: white; padding: 2rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border-left: 4px solid #27AE60; transition: var(--transition);">
+                <div style="width: 50px; height: 50px; background: #E8F8F5; color: #27AE60; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem; color: var(--text-dark);">An Toàn Vệ Sinh Tuyệt Đối</h3>
+                <p style="color: var(--text-light); line-height: 1.7; font-size: 0.98rem;">
+                    Quy trình bếp mở sạch sẽ, đạt chuẩn an toàn vệ sinh thực phẩm cao nhất. Thịt bò tươi mới mỗi ngày, nói không với thực phẩm đông lạnh lâu ngày.
+                </p>
+            </div>
+        </div>
+
+        <!-- Story Content Section -->
+        <div style="background: white; border-radius: var(--radius-lg); padding: 3rem; box-shadow: var(--shadow-sm); display: flex; flex-wrap: wrap; gap: 3rem; align-items: center; margin-bottom: 3rem;">
+            <div style="flex: 1; min-width: 300px;">
+                <h2 style="font-size: 1.8rem; color: var(--primary); margin-bottom: 1.25rem;"><i class="fa-solid fa-utensils"></i> Hành Trình Hương Vị</h2>
+                <p style="color: var(--text-dark); line-height: 1.8; margin-bottom: 1rem; font-size: 1.05rem;">
+                    Xuất phát từ niềm đam mê bất tận với ẩm thực truyền thống Việt Nam, <strong>Bún Bò Gia Truyền</strong> được thành lập với khát vọng mang đến một không gian thưởng thức bún bò chuẩn vị, nơi thực khách có thể cảm nhận trọn vẹn nét tinh tế của văn hóa cố đô.
+                </p>
+                <p style="color: var(--text-dark); line-height: 1.8; font-size: 1.05rem;">
+                    Chúng tôi tin rằng, bữa ăn ngon không chỉ là sự tiếp nạp năng lượng, mà còn là khoảng thời gian kết nối gia đình, bạn bè và tận hưởng hạnh phúc.
+                </p>
+                <div style="margin-top: 2rem;">
+                    <a href="/menu" class="btn-primary" style="padding: 0.9rem 1.8rem; font-size: 1rem;">
+                        <i class="fa-solid fa-bowl-hot"></i> Xem Thực Đơn Ngay
+                    </a>
+                </div>
+            </div>
+            <div style="flex: 1; min-width: 280px; text-align: center;">
+                <img src="https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=600&auto=format&fit=crop" alt="Bún bò Huế" 
+                     style="width: 100%; max-width: 420px; border-radius: var(--radius-md); box-shadow: var(--shadow-md); transform: rotate(2deg);">
+            </div>
+        </div>
+    </div>
+
+    <!-- CART SIDEBAR SLIDEOUT -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fa-solid fa-shopping-basket" style="color: var(--primary);"></i> Đơn đặt món</h3>
+            <button class="qty-btn" aria-label="Đóng giỏ hàng" onclick="toggleCartSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="cart-items-container" class="cart-items-list">
+            <p style="text-align: center; color: var(--text-light); margin-top: 2rem;">Giỏ hàng của bạn đang trống.</p>
+        </div>
+        <div class="cart-total-section">
+            <div class="cart-total-row">
+                <span>Tổng cộng:</span>
+                <span id="cart-total-price">0 đ</span>
+            </div>
+        </div>
+        <a href="/menu" class="btn-primary" style="width: 100%; justify-content: center; padding: 1rem; text-decoration: none; display: flex;">
+            <i class="fa-solid fa-arrow-right"></i> Đến Thực Đơn Để Đặt Món
+        </a>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+
+    <!-- Floating Action Buttons & AI Chatbot -->
+    <div th:replace="~{fragments/layout :: floating_contact}"></div>
+</body>
+</html>

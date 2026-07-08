@@ -79,7 +79,7 @@ public class AdminController {
     }
 
     @PostMapping("/order/{id}/update-status")
-    public String updateOrderStatus(@PathVariable("id") Long id, @RequestParam("status") String status) {
+    public String updateOrderStatus(@PathVariable("id") Long id, @RequestParam("status") String status, @RequestHeader(value = "Referer", required = false) String referer) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid order ID"));
         
@@ -105,18 +105,18 @@ public class AdminController {
         }
         
         orderRepository.save(order);
-        return "redirect:/admin/dashboard";
+        return "redirect:" + (referer != null && !referer.isEmpty() ? referer : "/admin/dashboard");
     }
 
     @PostMapping("/order/{id}/mark-paid")
-    public String markOrderAsPaid(@PathVariable("id") Long id) {
+    public String markOrderAsPaid(@PathVariable("id") Long id, @RequestHeader(value = "Referer", required = false) String referer) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid order ID"));
         
         order.setPaymentStatus("PAID");
         orderRepository.save(order);
         
-        return "redirect:/admin/dashboard";
+        return "redirect:" + (referer != null && !referer.isEmpty() ? referer : "/admin/dashboard");
     }
 
     @GetMapping("/order/{id}/print")
@@ -210,7 +210,7 @@ public class AdminController {
         if (imageUrl != null && !imageUrl.isBlank()) {
             dish.setImageUrl(imageUrl);
         } else if (dish.getImageUrl() == null) {
-            dish.setImageUrl("/images/default-food.jpg");
+            dish.setImageUrl("https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop");
         }
         dish.setAvailable(true);
         
@@ -222,5 +222,64 @@ public class AdminController {
     public String deleteDish(@PathVariable("id") Long id) {
         dishRepository.deleteById(id);
         return "redirect:/admin/menu";
+    }
+
+    // ==========================================
+    // RESTAURANT TABLES MANAGEMENT (QUẢN LÝ BÀN ĂN)
+    // ==========================================
+    @GetMapping("/tables")
+    public String manageTables(Authentication authentication, Model model) {
+        Branch branch = getUserBranch(authentication);
+        if (branch == null) return "redirect:/login";
+
+        List<RestaurantTable> tables = tableRepository.findByBranchId(branch.getId());
+        model.addAttribute("tables", tables);
+        model.addAttribute("currentBranch", branch);
+        model.addAttribute("activeTab", "tables");
+        return "admin/tables";
+    }
+
+    @PostMapping("/tables/save")
+    public String saveTable(@RequestParam(value = "id", required = false) Long id,
+                            @RequestParam("tableNumber") String tableNumber,
+                            @RequestParam("status") String status,
+                            Authentication authentication) {
+        Branch branch = getUserBranch(authentication);
+        if (branch == null) return "redirect:/login";
+
+        RestaurantTable table;
+        if (id != null && id > 0) {
+            table = tableRepository.findById(id).orElse(new RestaurantTable());
+        } else {
+            table = new RestaurantTable();
+            table.setBranch(branch);
+        }
+        table.setTableNumber(tableNumber);
+        table.setStatus(status);
+        tableRepository.save(table);
+        return "redirect:/admin/tables";
+    }
+
+    @PostMapping("/tables/delete/{id}")
+    public String deleteTable(@PathVariable("id") Long id) {
+        tableRepository.deleteById(id);
+        return "redirect:/admin/tables";
+    }
+
+    // ==========================================
+    // TABLE DETAIL PAGE (CHI TIẾT BÀN ĂN)
+    // ==========================================
+    @GetMapping("/table-detail")
+    public String tableDetail(@RequestParam("id") Long id, Model model) {
+        RestaurantTable table = tableRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn ăn"));
+
+        List<Order> activeOrders = orderRepository.findByTableIdAndStatusNot(id, "COMPLETED");
+        activeOrders.removeIf(o -> "CANCELLED".equals(o.getStatus()));
+
+        model.addAttribute("table", table);
+        model.addAttribute("activeOrders", activeOrders);
+        model.addAttribute("activeTab", "tables");
+        return "admin/table-detail";
     }
 }

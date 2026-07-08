@@ -8,8 +8,10 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Configuration
+@ConditionalOnProperty(name = "app.db.seed-java", havingValue = "true", matchIfMissing = false)
 public class DataInitializer {
 
     @Bean
@@ -61,7 +63,8 @@ public class DataInitializer {
                 userRepository.save(new User(null, "waiter", encodedPassword, "Nhân viên Phục vụ", waiterRole, defaultBranch, true));
                 userRepository.save(new User(null, "kitchen", encodedPassword, "Nhân viên Bếp", kitchenRole, defaultBranch, true));
                 userRepository.save(new User(null, "inventory", encodedPassword, "Nhân viên Kho", inventoryRole, defaultBranch, true));
-                System.out.println("--> Seeded default Users (admin, cashier, waiter, kitchen, inventory) successfully!");
+                userRepository.save(new User(null, "customer", encodedPassword, "Khách hàng Mẫu", customerRole, defaultBranch, true));
+                System.out.println("--> Seeded default Users (admin, cashier, waiter, kitchen, inventory, customer) successfully!");
             }
 
             // 4. Seed Dishes if empty
@@ -70,13 +73,13 @@ public class DataInitializer {
             Dish bunBoGioHeo = null;
             
             if (dishRepository.count() == 0) {
-                bunBoDacBiet = dishRepository.save(new Dish(null, "Bún Bò Đặc Biệt", 65000.0, "/images/bun-bo-dac-biet.jpg", "Bún Bò", true, defaultBranch));
-                bunBoTaiNam = dishRepository.save(new Dish(null, "Bún Bò Tái Nạm Chả", 55000.0, "/images/bun-bo-tai-nam.jpg", "Bún Bò", true, defaultBranch));
-                bunBoGioHeo = dishRepository.save(new Dish(null, "Bún Bò Giò Heo", 50000.0, "/images/bun-bo-gio-heo.jpg", "Bún Bò", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Chả Cua Thêm (1 viên)", 12000.0, "", "Món thêm", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Thịt Nạm Bò Thêm", 18000.0, "", "Món thêm", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Trà Đá", 5000.0, "", "Nước uống", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Nước Ngọt (Coca/Pepsi)", 15000.0, "", "Nước uống", true, defaultBranch));
+                bunBoDacBiet = dishRepository.save(new Dish(null, "Bún Bò Đặc Biệt", 65000.0, "https://images.unsplash.com/photo-1555126634-323283e090fa?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
+                bunBoTaiNam = dishRepository.save(new Dish(null, "Bún Bò Tái Nạm Chả", 55000.0, "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
+                bunBoGioHeo = dishRepository.save(new Dish(null, "Bún Bò Giò Heo", 50000.0, "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Chả Cua Thêm (1 viên)", 12000.0, "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop", "Món thêm", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Thịt Nạm Bò Thêm", 18000.0, "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=600&auto=format&fit=crop", "Món thêm", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Trà Đá", 5000.0, "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop", "Nước uống", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Nước Ngọt (Coca/Pepsi)", 15000.0, "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop", "Nước uống", true, defaultBranch));
                 System.out.println("--> Seeded Menu Dishes successfully!");
             } else {
                 List<Dish> list = dishRepository.findByBranchId(defaultBranch.getId());

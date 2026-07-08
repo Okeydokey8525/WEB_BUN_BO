@@ -14,44 +14,53 @@
     <div class="admin-layout">
         
         <!-- Sidebar Navigation -->
-        <aside class="admin-sidebar">
-            <div>
-                <div class="admin-sidebar-header">
-                    <i class="fa-solid fa-bowl-hot"></i> Bún Bò POS
-                </div>
-                <ul class="admin-menu-list">
-                    <li class="admin-menu-item">
-                        <a href="/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Tổng quan</a>
-                    </li>
-                    <li class="admin-menu-item active">
-                        <a href="/admin/menu"><i class="fa-solid fa-utensils"></i> Thực đơn</a>
-                    </li>
-                    <li class="admin-menu-item">
-                        <a href="/admin/inventory"><i class="fa-solid fa-warehouse"></i> Kho nguyên liệu</a>
-                    </li>
-                </ul>
-            </div>
-            
-            <div style="display:flex; flex-direction:column; gap:0.5rem; width:100%;">
-                <a href="/" class="btn-secondary" style="text-align:center; padding: 0.6rem; border-color: rgba(255,255,255,0.4); color: white; background: transparent;">
-                    <i class="fa-solid fa-arrow-left"></i> Về trang khách
-                </a>
-                <form th:action="@{/logout}" method="post" style="display:flex; flex-direction:column; margin:0;">
-                    <button type="submit" class="btn-secondary" style="text-align:center; padding: 0.6rem; border-color: var(--danger); color: white; background: var(--danger); box-shadow:none; justify-content:center; cursor:pointer;">
-                        <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
-                    </button>
-                </form>
-            </div>
-        </aside>
+        <aside th:replace="fragments/layout :: admin_sidebar('menu')"></aside>
 
         <!-- Main Content -->
         <main class="admin-content" style="display:grid; grid-template-columns: 1fr 350px; gap: 2rem;">
             
+            <!-- TOPBAR SPANNING FULL WIDTH -->
+            <div style="grid-column: 1 / -1;">
+                <div th:replace="fragments/layout :: admin_topbar('Quản Lý Thực Đơn', 'Tìm kiếm nhanh tên món, đơn giá...')"></div>
+            </div>
+
             <!-- LEFT COLUMN: DISH LIST -->
             <div>
-                <h2 style="margin-bottom: 2rem; font-size:2rem;"><i class="fa-solid fa-utensils"></i> Danh Sách Thực Đơn</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0; font-size:1.8rem;"><i class="fa-solid fa-utensils"></i> Danh Sách Thực Đơn</h2>
+                </div>
                 
-                <table class="admin-table">
+                <!-- ADVANCED SEARCH & FILTER SUITE -->
+                <div class="advanced-filter-suite">
+                    <div class="filter-row">
+                        <div class="filter-search-input">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="text" id="menuFilterKeyword" placeholder="Tìm kiếm tên món ăn..." oninput="applyMenuFilters()">
+                        </div>
+                        <div class="filter-controls">
+                            <select id="menuFilterPrice" class="filter-select" onchange="applyMenuFilters()">
+                                <option value="all">⚡ Tất cả mức giá</option>
+                                <option value="under35">💰 Dưới 35,000 đ</option>
+                                <option value="35to55">💰 35,000 đ - 55,000 đ</option>
+                                <option value="above55">💰 Trên 55,000 đ</option>
+                            </select>
+                            <select id="menuSortOrder" class="filter-select" onchange="applyMenuFilters()">
+                                <option value="default">↕️ Sắp xếp mặc định</option>
+                                <option value="price-asc">💵 Giá tăng dần</option>
+                                <option value="price-desc">💵 Giá giảm dần</option>
+                                <option value="name-asc">🔤 Tên A - Z</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-tabs" id="categoryTabs">
+                        <button type="button" class="filter-tab-btn active" onclick="setCategoryTab('all', this)">Tất cả món</button>
+                        <button type="button" class="filter-tab-btn" onclick="setCategoryTab('Bún Bò', this)">🍜 Bún Bò</button>
+                        <button type="button" class="filter-tab-btn" onclick="setCategoryTab('Món thêm', this)">🥟 Món thêm</button>
+                        <button type="button" class="filter-tab-btn" onclick="setCategoryTab('Nước uống', this)">🥤 Nước uống</button>
+                    </div>
+                </div>
+                
+                <table class="admin-table" id="adminMenuTable">
                     <thead>
                         <tr>
                             <th>Ảnh</th>
@@ -62,8 +71,8 @@
                             <th>Hành động</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr th:each="dish : ${dishes}">
+                    <tbody id="menuTableBody">
+                        <tr th:each="dish : ${dishes}" class="dish-row" th:data-id="${dish.id}" th:data-name="${dish.name}" th:data-category="${dish.category}" th:data-price="${dish.price}" th:data-image="${dish.imageUrl}">
                             <td>
                                 <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" th:src="${dish.imageUrl}" alt="food" style="width: 50px; height: 50px; object-fit: cover; border-radius: var(--radius-sm);">
                                 <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" style="width: 50px; height: 50px; background-color:#EEE; display:flex; align-items:center; justify-content:center; border-radius: var(--radius-sm);">
@@ -86,7 +95,7 @@
                             <td>
                                 <div style="display:flex; gap:0.5rem;">
                                     <button type="button" class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"
-                                            th:attr="onclick=|editDish(${dish.id}, '${dish.name}', ${dish.price}, '${dish.category}', '${dish.imageUrl}')|">
+                                            onclick="editDishFromRow(this.closest('tr'))">
                                         Sửa
                                     </button>
                                     <form th:action="@{/admin/menu/delete/{id}(id=${dish.id})}" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa món này chứ?')">
@@ -156,6 +165,25 @@
 
     <!-- JS Helper for editing -->
     <script th:inline="javascript">
+        function editDishFromRow(row) {
+            if (!row) return;
+            const id = row.getAttribute('data-id');
+            const name = row.getAttribute('data-name') || '';
+            const price = row.getAttribute('data-price') || 0;
+            const category = row.getAttribute('data-category') || 'Bún Bò';
+            const imageUrl = row.getAttribute('data-image') || '';
+            
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Cập Nhật Món Ăn';
+            document.getElementById('dish-id').value = id;
+            document.getElementById('dish-name').value = name;
+            document.getElementById('dish-price').value = price;
+            document.getElementById('dish-category').value = category;
+            document.getElementById('dish-image').value = (imageUrl === 'null' || imageUrl === 'undefined') ? '' : imageUrl;
+            
+            document.getElementById('btn-cancel-edit').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function editDish(id, name, price, category, imageUrl) {
             document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Cập Nhật Món Ăn';
             document.getElementById('dish-id').value = id;
@@ -176,6 +204,52 @@
             document.getElementById('dish-image').value = '';
             
             document.getElementById('btn-cancel-edit').style.display = 'none';
+        }
+
+        let currentCategoryTab = 'all';
+        function setCategoryTab(cat, btn) {
+            currentCategoryTab = cat;
+            document.querySelectorAll('#categoryTabs .filter-tab-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            applyMenuFilters();
+        }
+
+        function applyMenuFilters() {
+            const kw = document.getElementById('menuFilterKeyword').value.toLowerCase().trim();
+            const priceFilter = document.getElementById('menuFilterPrice').value;
+            const sortOrder = document.getElementById('menuSortOrder').value;
+            
+            const tbody = document.getElementById('menuTableBody');
+            const rows = Array.from(tbody.getElementsByClassName('dish-row'));
+            
+            rows.forEach(row => {
+                const name = (row.getAttribute('data-name') || '').toLowerCase();
+                const category = row.getAttribute('data-category') || '';
+                const price = parseFloat(row.getAttribute('data-price')) || 0;
+                
+                let matchKeyword = !kw || name.includes(kw);
+                let matchCategory = currentCategoryTab === 'all' || category === currentCategoryTab;
+                let matchPrice = true;
+                if (priceFilter === 'under35') matchPrice = price < 35000;
+                else if (priceFilter === '35to55') matchPrice = price >= 35000 && price <= 55000;
+                else if (priceFilter === 'above55') matchPrice = price > 55000;
+                
+                if (matchKeyword && matchCategory && matchPrice) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            if (sortOrder !== 'default') {
+                rows.sort((a, b) => {
+                    if (sortOrder === 'price-asc') return (parseFloat(a.getAttribute('data-price')) || 0) - (parseFloat(b.getAttribute('data-price')) || 0);
+                    if (sortOrder === 'price-desc') return (parseFloat(b.getAttribute('data-price')) || 0) - (parseFloat(a.getAttribute('data-price')) || 0);
+                    if (sortOrder === 'name-asc') return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+                    return 0;
+                });
+                rows.forEach(r => tbody.appendChild(r));
+            }
         }
     </script>
 </body>

@@ -10,7 +10,10 @@
     <section class="hero">
         <h1>Bún Bò Gia Truyền</h1>
         <p>Hương vị đậm đà, nước cốt hầm xương 24h từ công thức bí truyền cố đô Huế.</p>
-        <a href="/menu" class="btn-primary"><i class="fa-solid fa-fire"></i> Đặt món ngay tại bàn</a>
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="/menu" class="btn-primary" style="background: var(--primary); border: 2px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"><i class="fa-solid fa-fire"></i> Đặt món ngay tại bàn</a>
+            <a href="/search" class="btn-secondary" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; text-decoration: none; padding: 0.8rem 1.5rem; border-radius: var(--radius-sm); font-weight: 600; display: inline-flex; align-items: center; gap: 8px;"><i class="fa-solid fa-sliders"></i> Bộ lọc nâng cao</a>
+        </div>
     </section>
 
     <!-- Signature Dishes Highlight -->
@@ -18,7 +21,10 @@
         <h2 class="section-title">Món Ngon Nổi Bật</h2>
         <div class="dishes-grid" style="margin-top: 2rem;">
             <!-- Iterate over featured dishes from model -->
-            <div class="dish-card" th:each="dish : ${featuredDishes}">
+            <div class="dish-card" th:each="dish : ${featuredDishes}" style="position: relative;">
+                <button type="button" th:attr="onclick=|toggleFavoriteDish(${dish.id}, this)|" style="position: absolute; top: 10px; left: 10px; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.95); border: none; box-shadow: 0 3px 8px rgba(0,0,0,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E74C3C; font-size: 1.1rem; transition: 0.2s;" title="Yêu thích món này" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                    <i th:class="${currentUser != null && currentUser.favoriteDishes.contains(dish) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
+                </button>
                 <div class="dish-img-wrapper">
                     <!-- Standard placeholder fallback -->
                     <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" th:src="${dish.imageUrl}" th:alt="${dish.name}" class="dish-img">
@@ -56,10 +62,12 @@
         </div>
     </section>
 
-    <!-- Simple footer -->
-    <footer style="background-color: #2C3E50; color: white; text-align: center; padding: 2rem; font-size: 0.9rem;">
-        <p>&copy; 2026 Bún Bò Gia Truyền. Phục vụ với cả tấm lòng.</p>
-    </footer>
+    <!-- Rich Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+
+    <!-- Floating Action Buttons & AI Chatbot -->
+    <div th:replace="~{fragments/layout :: floating_contact}"></div>
 
 </body>
 </html>
+

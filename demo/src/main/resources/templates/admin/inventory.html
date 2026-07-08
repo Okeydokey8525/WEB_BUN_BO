@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Kho - Bún Bò Gia Truyền</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -48,28 +49,34 @@
     </style>
 </head>
 <body>
-    <div th:replace="fragments/layout :: header"></div>
+    <div class="admin-layout">
+        <aside th:replace="fragments/layout :: admin_sidebar('inventory')"></aside>
 
-    <main class="container">
-        <h2><i class="fas fa-boxes"></i> Quản lý Kho Nguyên Liệu</h2>
-        
-        <div th:if="${lowStockCount > 0}" style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <i class="fas fa-exclamation-triangle"></i> Cảnh báo: Có <strong th:text="${lowStockCount}">0</strong> nguyên liệu đang dưới mức tối thiểu. Cần nhập thêm!
-        </div>
-
-        <div class="inventory-grid">
-            <div th:each="item : ${inventoryItems}" class="inventory-card" th:classappend="${item.quantity <= item.minThreshold} ? 'warning' : 'good'">
-                <h3 th:text="${item.ingredientName}">Nguyên Liệu</h3>
-                <p>Số lượng hiện tại: <strong th:text="${item.quantity} + ' ' + ${item.unit}">0 kg</strong></p>
-                <p style="color: #666; font-size: 0.9em;">Mức tối thiểu: <span th:text="${item.minThreshold} + ' ' + ${item.unit}">0 kg</span></p>
-
-                <form class="update-form" th:action="@{/admin/inventory/update}" method="post">
-                    <input type="hidden" name="itemId" th:value="${item.id}">
-                    <input type="number" step="0.1" name="quantity" class="update-input" th:value="${item.quantity}" required>
-                    <button type="submit" class="btn-update"><i class="fas fa-save"></i> Cập nhật</button>
-                </form>
+        <main class="admin-content">
+            <div th:replace="fragments/layout :: admin_topbar('Quản Lý Kho Nguyên Liệu', 'Tìm kiếm nguyên liệu, đơn vị tính...')"></div>
+            
+            <div th:if="${lowStockCount > 0}" class="alert-warning-toast" style="margin-bottom: 20px;">
+                <i class="fas fa-exclamation-triangle" style="color: var(--warning); font-size: 1.5rem;"></i>
+                <div>
+                    <strong style="color: var(--secondary);">Cảnh báo nguyên liệu sắp hết!</strong>
+                    <div>Có <strong th:text="${lowStockCount}">0</strong> nguyên liệu đang dưới mức tối thiểu. Cần khẩn trương nhập thêm!</div>
+                </div>
             </div>
-        </div>
-    </main>
+
+            <div class="inventory-grid">
+                <div th:each="item : ${inventoryItems}" class="inventory-card" th:classappend="${item.quantity <= item.minThreshold} ? 'warning' : 'good'">
+                    <h3 th:text="${item.ingredientName}" style="margin-top:0; color: var(--text-dark);">Nguyên Liệu</h3>
+                    <p>Số lượng hiện tại: <strong th:text="${item.quantity} + ' ' + ${item.unit}" style="color: var(--primary); font-size: 1.15rem;">0 kg</strong></p>
+                    <p style="color: var(--text-light); font-size: 0.9em; margin-bottom: 1rem;">Mức tối thiểu: <span th:text="${item.minThreshold} + ' ' + ${item.unit}">0 kg</span></p>
+
+                    <form class="update-form" th:action="@{/admin/inventory/update}" method="post" style="display:flex; gap:8px;">
+                        <input type="hidden" name="itemId" th:value="${item.id}">
+                        <input type="number" step="0.1" name="quantity" class="update-input" th:value="${item.quantity}" style="flex:1; padding:0.5rem; border:1px solid #CCC; border-radius:4px;" required>
+                        <button type="submit" class="btn-update" style="background:var(--primary); color:white; border:none; padding:0.5rem 1rem; border-radius:4px; cursor:pointer; font-weight:600;"><i class="fas fa-save"></i> Lưu</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
 </body>
 </html>

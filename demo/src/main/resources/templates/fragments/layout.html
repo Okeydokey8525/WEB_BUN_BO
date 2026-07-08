@@ -8,62 +8,774 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Style Sheet -->
     <link rel="stylesheet" href="/css/style.css">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
 </head>
 <body>
 
     <!-- NAVBAR (COMMON FOR CUSTOMER SIDE) -->
     <header class="navbar" th:fragment="navbar">
-        <a href="/" class="navbar-brand">
-            <i class="fa-solid fa-bowl-hot"></i>
-            <span>Bún Bò <span>Gia Truyền</span></span>
-        </a>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <!-- HAMBURGER BUTTON FOR MOBILE (3 QUE) -->
+            <button type="button" class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Mở menu điều hướng" style="display: none; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; width: 40px; height: 40px; border-radius: 8px; align-items: center; justify-content: center; font-size: 1.25rem; cursor: pointer; transition: 0.3s;">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <a href="/" class="navbar-brand" style="margin-right: 0;">
+                <i class="fa-solid fa-bowl-hot"></i>
+                <span>Bún Bò <span>Gia Truyền</span></span>
+            </a>
+        </div>
+
+        <!-- Header Integrated Search Bar -->
+        <form action="/search" method="get" class="header-search-bar" style="display: flex; align-items: center; background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 25px; padding: 0.35rem 1rem; margin: 0 1.5rem; flex: 1; max-width: 380px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <i class="fa-solid fa-search" style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-right: 10px;"></i>
+            <input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm món ăn, nước uống..." style="background: transparent; border: none; outline: none; color: white; font-size: 0.95rem; width: 100%; padding: 0.2rem 0;">
+            <button type="submit" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0 6px;" title="Tìm kiếm"><i class="fa-solid fa-arrow-right"></i></button>
+            <span style="color: rgba(255,255,255,0.3); margin: 0 4px;">|</span>
+            <a href="/search" style="color: rgba(255,255,255,0.9); font-size: 0.9rem; padding: 0 4px; text-decoration: none;" title="Lọc nâng cao"><i class="fa-solid fa-sliders"></i></a>
+        </form>
+
+        <!-- Mobile Integrated Search Bar (Under Header on Mobile) -->
+        <div class="mobile-header-search" style="display: none; width: 100%; margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.2);">
+            <form action="/search" method="get" style="display: flex; align-items: center; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 20px; padding: 0.35rem 1rem;">
+                <i class="fa-solid fa-search" style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin-right: 8px;"></i>
+                <input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm nhanh bún bò, nước giải khát..." style="background: transparent; border: none; outline: none; color: white; font-size: 0.95rem; width: 100%;">
+                <button type="submit" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0 4px;" title="Tìm kiếm"><i class="fa-solid fa-arrow-right"></i></button>
+            </form>
+        </div>
+
         <nav>
             <ul class="navbar-links">
-                <li><a href="/"><i class="fa-solid fa-house"></i> Trang chủ</a></li>
-                <li><a href="/menu"><i class="fa-solid fa-utensils"></i> Thực đơn</a></li>
+                <li class="nav-item-link"><a href="/"><i class="fa-solid fa-house"></i> Trang chủ</a></li>
+                <li class="nav-item-link"><a href="/menu"><i class="fa-solid fa-utensils"></i> Thực đơn</a></li>
+                <li class="nav-item-link"><a href="/search"><i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm & Lọc</a></li>
+                <li class="nav-item-link"><a href="/about"><i class="fa-solid fa-circle-info"></i> Về chúng tôi</a></li>
                 <li class="cart-icon-btn" onclick="toggleCartSidebar()">
                     <button style="background:none; border:none; color:inherit; font:inherit; cursor:pointer; padding:0; display:flex; align-items:center;" aria-label="Mở giỏ hàng">
                         <i class="fa-solid fa-shopping-cart" aria-hidden="true"></i> <span>Giỏ hàng</span>
                         <span id="cart-badge-count" class="cart-badge" style="display:none;" aria-label="Số lượng món">0</span>
                     </button>
                 </li>
-                <li th:if="${#authorization.expression('isAnonymous()')}">
-                    <a href="/login" class="btn-nav-admin"><i class="fa-solid fa-sign-in-alt"></i> Đăng nhập</a>
+                
+                <!-- THEME TOGGLE BUTTON -->
+                <li class="theme-toggle-btn" style="list-style:none;">
+                    <button type="button" onclick="toggleThemeMode()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;" title="Chuyển đổi Sáng / Tối">
+                        <i class="fa-solid fa-moon theme-icon"></i>
+                    </button>
                 </li>
-                <li th:if="${#authorization.expression('isAuthenticated()')}">
-                    <form th:action="@{/logout}" method="post" style="display:inline;">
-                        <button type="submit" class="btn-nav-admin" style="background: none; border: none; cursor: pointer; color: white;">
-                            <i class="fa-solid fa-sign-out-alt"></i> Đăng xuất
+
+                <!-- USER AVATAR DROPDOWN (AS REQUESTED) -->
+                <li style="position: relative;" class="user-dropdown-container">
+                    <!-- ANONYMOUS USER -->
+                    <div th:if="${#authorization.expression('isAnonymous()')}">
+                        <button type="button" onclick="toggleUserNavDropdown(event)" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: 0.3s;" title="Tài khoản khách">
+                            <i class="fa-solid fa-user"></i>
                         </button>
-                    </form>
+                        <div class="user-nav-dropdown" id="userNavDropdown" style="display: none; position: absolute; right: 0; top: 48px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 240px; padding: 0.5rem 0; z-index: 9999; border: 1px solid #EEE; text-align: left;">
+                            <div style="padding: 0.75rem 1rem; border-bottom: 1px solid #F0F0F0; font-size: 0.85rem; color: #7F8C8D; font-weight: 500;">
+                                Chào mừng bạn đến quán
+                            </div>
+                            <a href="/login" style="display: flex; align-items: center; gap: 10px; padding: 0.7rem 1rem; color: #2C3E50; text-decoration: none; font-weight: 600; transition: 0.2s;" onmouseover="this.style.background='#F8F9F9'" onmouseout="this.style.background='transparent'">
+                                <i class="fa-solid fa-sign-in-alt" style="color: var(--primary); width: 20px;"></i> Đăng nhập
+                            </a>
+                            <a href="/register" style="display: flex; align-items: center; gap: 10px; padding: 0.7rem 1rem; color: #2C3E50; text-decoration: none; font-weight: 600; transition: 0.2s;" onmouseover="this.style.background='#F8F9F9'" onmouseout="this.style.background='transparent'">
+                                <i class="fa-solid fa-user-plus" style="color: var(--secondary); width: 20px;"></i> Đăng ký tài khoản
+                            </a>
+                            <a href="/forgot-password" style="display: flex; align-items: center; gap: 10px; padding: 0.7rem 1rem; color: #7F8C8D; text-decoration: none; font-size: 0.9rem; transition: 0.2s; border-top: 1px solid #F0F0F0;" onmouseover="this.style.background='#F8F9F9'" onmouseout="this.style.background='transparent'">
+                                <i class="fa-solid fa-key" style="width: 20px;"></i> Quên mật khẩu?
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- LOGGED IN USER -->
+                    <div th:if="${#authorization.expression('isAuthenticated()')}">
+                        <button type="button" onclick="toggleUserNavDropdown(event)" style="width: 40px; height: 40px; border-radius: 50%; background: var(--secondary); border: 2px solid white; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: 0.3s; padding: 0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" title="Tài khoản của bạn">
+                            <img th:if="${currentUser != null && currentUser.avatarUrl != null && !currentUser.avatarUrl.isEmpty()}" th:src="${currentUser.avatarUrl}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                            <i th:unless="${currentUser != null && currentUser.avatarUrl != null && !currentUser.avatarUrl.isEmpty()}" class="fa-solid fa-user-check"></i>
+                        </button>
+                        <div class="user-nav-dropdown" id="userNavDropdown" style="display: none; position: absolute; right: 0; top: 48px; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); width: 250px; padding: 0.5rem 0; z-index: 9999; border: 1px solid #EEE; text-align: left;">
+                            <div style="padding: 0.8rem 1rem; border-bottom: 1px solid #F0F0F0; display: flex; align-items: center; gap: 10px; background: #FFF9F8;">
+                                <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; overflow: hidden; flex-shrink: 0;">
+                                    <img th:if="${currentUser != null && currentUser.avatarUrl != null && !currentUser.avatarUrl.isEmpty()}" th:src="${currentUser.avatarUrl}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <span th:unless="${currentUser != null && currentUser.avatarUrl != null && !currentUser.avatarUrl.isEmpty()}" th:text="${currentUser != null && currentUser.fullName != null ? #strings.substring(currentUser.fullName, 0, 1) : 'U'}">U</span>
+                                </div>
+                                <div style="overflow: hidden;">
+                                    <div style="font-weight: 700; color: #2C3E50; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" th:text="${currentUser != null && currentUser.fullName != null ? currentUser.fullName : #authentication.name}">Người dùng</div>
+                                    <div style="font-size: 0.8rem; color: #7F8C8D;" th:text="'@' + ${#authentication.name}">@username</div>
+                                </div>
+                            </div>
+                            
+                            <a href="/profile" style="display: flex; align-items: center; gap: 10px; padding: 0.7rem 1rem; color: #2C3E50; text-decoration: none; font-weight: 500; transition: 0.2s;" onmouseover="this.style.background='#F8F9F9'" onmouseout="this.style.background='transparent'">
+                                <i class="fa-solid fa-id-card" style="color: var(--primary); width: 20px;"></i> Trang cá nhân & Profile
+                            </a>
+                            <a href="/profile#favorites" style="display: flex; align-items: center; gap: 10px; padding: 0.7rem 1rem; color: #2C3E50; text-decoration: none; font-weight: 500; transition: 0.2s;" onmouseover="this.style.background='#F8F9F9'" onmouseout="this.style.background='transparent'">
+                                <i class="fa-solid fa-heart" style="color: #E74C3C; width: 20px;"></i> Món ăn yêu thích
+                            </a>
+
+                            <a th:if="${!#authorization.expression('hasRole(''CUSTOMER'')')}" th:href="@{${#authorization.expression('hasRole(''ADMIN'')') ? '/admin/dashboard' : (#authorization.expression('hasRole(''CASHIER'')') ? '/cashier/dashboard' : (#authorization.expression('hasRole(''WAITER'')') ? '/waiter/dashboard' : (#authorization.expression('hasRole(''KITCHEN'')') ? '/kitchen/dashboard' : '/admin/inventory'))) }}" style="display: flex; align-items: center; gap: 10px; padding: 0.7rem 1rem; color: #D35400; text-decoration: none; font-weight: 600; border-top: 1px solid #F0F0F0; transition: 0.2s;" onmouseover="this.style.background='#FEF9E7'" onmouseout="this.style.background='transparent'">
+                                <i class="fa-solid fa-user-shield" style="width: 20px;"></i> Trang Quản Trị POS
+                            </a>
+
+                            <form th:action="@{/logout}" method="post" style="margin: 0; border-top: 1px solid #F0F0F0;">
+                                <button type="submit" style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 0.7rem 1rem; color: #E74C3C; background: transparent; border: none; font-weight: 600; cursor: pointer; text-align: left; font-size: 0.9rem; transition: 0.2s;" onmouseover="this.style.background='#FDEDEC'" onmouseout="this.style.background='transparent'">
+                                    <i class="fa-solid fa-sign-out-alt" style="width: 20px;"></i> Đăng xuất
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </li>
             </ul>
         </nav>
-    </header>
 
-    <!-- NAVBAR (ADMIN/STAFF SIDE) -->
-    <header class="navbar" th:fragment="header">
-        <a href="/" class="navbar-brand">
-            <i class="fa-solid fa-bowl-hot"></i>
-            <span>Bún Bò <span>Quản Lý</span></span>
-        </a>
-        <nav>
-            <ul class="navbar-links">
-                <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}"><a href="/admin/dashboard"><i class="fa-solid fa-chart-bar"></i> Quản lý chung</a></li>
-                <li th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''CASHIER'')')}"><a href="/cashier/dashboard"><i class="fa-solid fa-cash-register"></i> Thu ngân</a></li>
-                <li th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''WAITER'')')}"><a href="/waiter/dashboard"><i class="fa-solid fa-walking"></i> Phục vụ</a></li>
-                <li th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''KITCHEN'')')}"><a href="/kitchen/dashboard"><i class="fa-solid fa-fire"></i> Bếp</a></li>
-                <li th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''INVENTORY'')')}"><a href="/admin/inventory"><i class="fa-solid fa-boxes"></i> Kho</a></li>
-                <li th:if="${#authorization.expression('isAuthenticated()')}">
-                    <form th:action="@{/logout}" method="post" style="display:inline;">
-                        <button type="submit" class="btn-nav-admin" style="background: none; border: none; cursor: pointer; color: white; padding: 0;">
-                            <i class="fa-solid fa-sign-out-alt"></i> Đăng xuất
+        <!-- USER DROPDOWN SCRIPT -->
+        <script>
+            function toggleUserNavDropdown(e) {
+                if (e) e.stopPropagation();
+                const dropdown = document.getElementById('userNavDropdown');
+                if (dropdown) {
+                    if (dropdown.style.display === 'none' || !dropdown.style.display) {
+                        dropdown.style.display = 'block';
+                    } else {
+                        dropdown.style.display = 'none';
+                    }
+                }
+            }
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('userNavDropdown');
+                if (dropdown && dropdown.style.display === 'block') {
+                    if (!dropdown.contains(e.target)) {
+                        dropdown.style.display = 'none';
+                    }
+                }
+            });
+
+            function toggleFavoriteDish(dishId, btnEl) {
+                fetch('/api/favorites/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'dishId=' + dishId
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const icon = btnEl.querySelector('i');
+                        if (data.isFavorite) {
+                            icon.className = 'fa-solid fa-heart';
+                            alert('❤️ Đã lưu món ăn vào danh sách yêu thích!');
+                        } else {
+                            icon.className = 'fa-regular fa-heart';
+                            alert('💔 Đã bỏ lưu món ăn yêu thích.');
+                        }
+                    } else if (data.status === 'unauthenticated') {
+                        if (confirm('Bạn cần đăng nhập để lưu món yêu thích! Đến trang đăng nhập ngay?')) {
+                            window.location.href = '/login';
+                        }
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra.');
+                    }
+                })
+                .catch(err => console.error(err));
+            }
+        </script>
+
+        <!-- MOBILE NAVIGATION SIDEBAR DRAWER ("CHẾ ĐỘ MENU") -->
+        <div id="mobile-sidebar-overlay" class="mobile-sidebar-overlay" onclick="toggleMobileSidebar()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.65); z-index: 99998; backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.3s ease;"></div>
+        <div id="mobile-sidebar" class="mobile-sidebar" style="position: fixed; top: 0; left: -340px; width: 310px; max-width: 85vw; height: 100vh; background: var(--bg-cream); z-index: 99999; box-shadow: 5px 0 25px rgba(0,0,0,0.35); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow-y: auto; font-family: var(--font-body); border-right: 1px solid var(--border-color); text-align: left;">
+            <!-- Sidebar Header -->
+            <div style="padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #C0392B, #E74C3C); color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.2);">
+                <a href="/" style="color: white; text-decoration: none; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; gap: 8px; font-family: var(--font-heading);">
+                    <i class="fa-solid fa-bowl-hot" style="color: #F39C12;"></i> Bún Bò Gia Truyền
+                </a>
+                <button type="button" onclick="toggleMobileSidebar()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; transition: 0.2s;" title="Đóng menu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- User Info or Auth Links (Enhanced like PC Dropdown) -->
+            <div style="padding: 1.25rem 1.5rem; background: var(--bg-cream); border-bottom: 1px solid var(--border-color);">
+                <div th:if="${#authorization.expression('isAuthenticated()')}">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.8rem; padding-bottom: 0.8rem; border-bottom: 1px solid rgba(0,0,0,0.06);">
+                        <div style="width: 45px; height: 45px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; overflow: hidden; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); flex-shrink: 0;">
+                            <img th:if="${currentUser != null && currentUser.avatarUrl != null && !currentUser.avatarUrl.isEmpty()}" th:src="${currentUser.avatarUrl}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                            <span th:unless="${currentUser != null && currentUser.avatarUrl != null && !currentUser.avatarUrl.isEmpty()}" th:text="${currentUser != null && currentUser.fullName != null ? #strings.substring(currentUser.fullName, 0, 1) : 'U'}">U</span>
+                        </div>
+                        <div style="overflow: hidden;">
+                            <div style="font-weight: 700; color: var(--text-dark); font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" th:text="${currentUser != null && currentUser.fullName != null ? currentUser.fullName : #authentication.name}">Người dùng</div>
+                            <div style="font-size: 0.85rem; color: var(--text-light);" th:text="'@' + ${#authentication.name}">@username</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <a href="/profile" style="display: flex; align-items: center; gap: 10px; padding: 0.5rem 0; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem;">
+                            <i class="fa-solid fa-id-card" style="color: var(--primary); width: 20px; text-align: center;"></i> Trang cá nhân & Profile
+                        </a>
+                        <a href="/profile#favorites" style="display: flex; align-items: center; gap: 10px; padding: 0.5rem 0; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem;">
+                            <i class="fa-solid fa-heart" style="color: #E74C3C; width: 20px; text-align: center;"></i> Món ăn yêu thích
+                        </a>
+                        <a th:if="${!#authorization.expression('hasRole(''CUSTOMER'')')}" th:href="@{${#authorization.expression('hasRole(''ADMIN'')') ? '/admin/dashboard' : (#authorization.expression('hasRole(''CASHIER'')') ? '/cashier/dashboard' : (#authorization.expression('hasRole(''WAITER'')') ? '/waiter/dashboard' : (#authorization.expression('hasRole(''KITCHEN'')') ? '/kitchen/dashboard' : '/admin/inventory'))) }}" style="display: flex; align-items: center; gap: 10px; padding: 0.5rem 0; color: #D35400; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
+                            <i class="fa-solid fa-user-shield" style="width: 20px; text-align: center;"></i> Trang Quản Trị POS
+                        </a>
+                        <form th:action="@{/logout}" method="post" style="margin: 0; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.06);">
+                            <button type="submit" style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 0.4rem 0; color: #E74C3C; background: transparent; border: none; font-weight: 600; cursor: pointer; text-align: left; font-size: 0.95rem;">
+                                <i class="fa-solid fa-sign-out-alt" style="width: 20px; text-align: center;"></i> Đăng xuất
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div th:if="${#authorization.expression('isAnonymous()')}">
+                    <div style="font-size: 0.85rem; color: var(--text-light); font-weight: 500; margin-bottom: 0.8rem;">
+                        👋 Chào mừng bạn đến quán!
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <a href="/login" class="btn-primary" style="padding: 0.7rem 1rem; font-size: 0.95rem; justify-content: center; text-decoration: none; border-radius: var(--radius-sm); font-weight: 700; box-shadow: 0 3px 10px rgba(192,57,43,0.25);">
+                            <i class="fa-solid fa-sign-in-alt"></i> Đăng nhập tài khoản
+                        </a>
+                        <a href="/register" class="btn-secondary" style="padding: 0.7rem 1rem; font-size: 0.95rem; justify-content: center; text-decoration: none; border-radius: var(--radius-sm); font-weight: 700; background: #FEF9E7; color: #D35400; border: 1px solid #F5B041;">
+                            <i class="fa-solid fa-user-plus"></i> Đăng ký thành viên mới
+                        </a>
+                        <a href="/forgot-password" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0.4rem 0; color: var(--text-light); text-decoration: none; font-size: 0.85rem; margin-top: 4px;">
+                            <i class="fa-solid fa-key"></i> Quên mật khẩu?
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div style="padding: 1rem 0; flex: 1;">
+                <div style="padding: 0 1.5rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px;">Menu điều hướng</div>
+                <a href="/" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(192, 57, 43, 0.08)'" onmouseout="this.style.background='transparent'">
+                    <i class="fa-solid fa-house" style="color: var(--primary); width: 22px; text-align: center;"></i> Trang chủ
+                </a>
+                <a href="/menu" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(192, 57, 43, 0.08)'" onmouseout="this.style.background='transparent'">
+                    <i class="fa-solid fa-utensils" style="color: var(--primary); width: 22px; text-align: center;"></i> Thực đơn món ăn
+                </a>
+                <a href="/search" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(192, 57, 43, 0.08)'" onmouseout="this.style.background='transparent'">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--primary); width: 22px; text-align: center;"></i> Tìm kiếm & Lọc nâng cao
+                </a>
+                <a href="/about" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(192, 57, 43, 0.08)'" onmouseout="this.style.background='transparent'">
+                    <i class="fa-solid fa-circle-info" style="color: var(--primary); width: 22px; text-align: center;"></i> Về chúng tôi
+                </a>
+                <a href="javascript:void(0)" onclick="toggleThemeMode(); toggleMobileSidebar();" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(192, 57, 43, 0.08)'" onmouseout="this.style.background='transparent'">
+                    <i class="fa-solid fa-moon theme-icon" style="color: var(--primary); width: 22px; text-align: center;"></i> Chuyển đổi Sáng / Tối
+                </a>
+                <a href="javascript:void(0)" onclick="toggleMobileSidebar(); toggleCartSidebar();" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(192, 57, 43, 0.08)'" onmouseout="this.style.background='transparent'">
+                    <i class="fa-solid fa-shopping-cart" style="color: var(--primary); width: 22px; text-align: center;"></i> Giỏ hàng đặt món
+                </a>
+
+                <!-- Account / POS Section -->
+                <div th:if="${#authorization.expression('isAuthenticated()')}">
+                    <div style="padding: 1rem 1.5rem 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; border-top: 1px solid var(--border-color); margin-top: 0.5rem;">Tài khoản cá nhân</div>
+                    <a href="/profile" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(192, 57, 43, 0.08)'" onmouseout="this.style.background='transparent'">
+                        <i class="fa-solid fa-id-card" style="color: var(--secondary); width: 22px; text-align: center;"></i> Trang cá nhân & Profile
+                    </a>
+                    <a href="/profile#favorites" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: var(--text-dark); text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(192, 57, 43, 0.08)'" onmouseout="this.style.background='transparent'">
+                        <i class="fa-solid fa-heart" style="color: #E74C3C; width: 22px; text-align: center;"></i> Món ăn yêu thích
+                    </a>
+                    <a th:if="${!#authorization.expression('hasRole(''CUSTOMER'')')}" th:href="@{${#authorization.expression('hasRole(''ADMIN'')') ? '/admin/dashboard' : (#authorization.expression('hasRole(''CASHIER'')') ? '/cashier/dashboard' : (#authorization.expression('hasRole(''WAITER'')') ? '/waiter/dashboard' : (#authorization.expression('hasRole(''KITCHEN'')') ? '/kitchen/dashboard' : '/admin/inventory'))) }}" style="display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: #D35400; text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(211, 84, 0, 0.1)'" onmouseout="this.style.background='transparent'">
+                        <i class="fa-solid fa-user-shield" style="width: 22px; text-align: center;"></i> Trang Quản Trị POS
+                    </a>
+                    <form th:action="@{/logout}" method="post" style="margin: 0;">
+                        <button type="submit" style="width: 100%; display: flex; align-items: center; gap: 14px; padding: 0.8rem 1.5rem; color: #E74C3C; background: transparent; border: none; font-weight: 600; cursor: pointer; text-align: left; font-size: 0.95rem; transition: 0.2s;" onmouseover="this.style.background='rgba(231, 76, 60, 0.1)'" onmouseout="this.style.background='transparent'">
+                            <i class="fa-solid fa-sign-out-alt" style="width: 22px; text-align: center;"></i> Đăng xuất
                         </button>
                     </form>
-                </li>
-            </ul>
-        </nav>
+                </div>
+            </div>
+
+            <!-- Footer Info inside Sidebar -->
+            <div style="padding: 1rem 1.5rem; background: rgba(0,0,0,0.03); border-top: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-light); line-height: 1.5;">
+                <div style="margin-bottom: 4px;"><i class="fa-solid fa-phone" style="color: var(--primary);"></i> Hotline: <strong style="color: var(--text-dark);">0987.654.321</strong></div>
+                <div><i class="fa-solid fa-clock" style="color: #2ECC71;"></i> Mở cửa: <strong style="color: var(--text-dark);">06:00 - 22:00</strong></div>
+            </div>
+        </div>
+
+        <script>
+            function toggleMobileSidebar() {
+                const sidebar = document.getElementById('mobile-sidebar');
+                const overlay = document.getElementById('mobile-sidebar-overlay');
+                if (!sidebar || !overlay) return;
+                if (sidebar.style.left === '0px') {
+                    sidebar.style.left = '-340px';
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.style.display = 'none', 300);
+                    document.body.style.overflow = '';
+                } else {
+                    overlay.style.display = 'block';
+                    setTimeout(() => overlay.style.opacity = '1', 10);
+                    sidebar.style.left = '0px';
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+        </script>
     </header>
 
+    <!-- UNIFIED ADMIN / STAFF LEFT SIDEBAR -->
+    <!-- Mobile Overlay placed outside the sidebar stacking context -->
+    <div id="admin-mobile-sidebar-overlay" onclick="toggleAdminMobileSidebar()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99998; backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.3s ease;"></div>
+    <aside class="admin-sidebar" th:fragment="admin_sidebar(activeTab)">
+        <div style="width: 100%; position: relative; z-index: 100000;">
+            <div class="admin-sidebar-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fa-solid fa-bowl-hot"></i> Bún Bò POS</span>
+                <button type="button" class="admin-sidebar-close-btn" onclick="toggleAdminMobileSidebar()" style="display: none; background: rgba(255,255,255,0.15); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <ul class="admin-menu-list">
+                <li class="admin-menu-item">
+                    <a href="/" style="color: #F39C12; font-weight: 700;"><i class="fa-solid fa-house"></i> Trang chủ nhà hàng</a>
+                </li>
+                <li th:class="${activeTab == 'dashboard' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                    <a href="/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Tổng quan</a>
+                </li>
+                <li th:class="${activeTab == 'cashier' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''CASHIER'')')}">
+                    <a href="/cashier/dashboard"><i class="fa-solid fa-cash-register"></i> POS Thu ngân</a>
+                </li>
+                <li th:class="${activeTab == 'waiter' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''WAITER'')')}">
+                    <a href="/waiter/dashboard"><i class="fa-solid fa-walking"></i> Phục vụ bàn</a>
+                </li>
+                <li th:class="${activeTab == 'kitchen' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''KITCHEN'')')}">
+                    <a href="/kitchen/dashboard"><i class="fa-solid fa-fire"></i> Bếp chế biến</a>
+                </li>
+                <li th:class="${activeTab == 'menu' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                    <a href="/admin/menu"><i class="fa-solid fa-utensils"></i> Thực đơn</a>
+                </li>
+                <li th:class="${activeTab == 'tables' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''CASHIER'', ''WAITER'')')}">
+                    <a href="/admin/tables"><i class="fa-solid fa-chair"></i> Quản lý bàn ăn</a>
+                </li>
+                <li th:class="${activeTab == 'inventory' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''INVENTORY'')')}">
+                    <a href="/admin/inventory"><i class="fa-solid fa-warehouse"></i> Kho nguyên liệu</a>
+                </li>
+            </ul>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:0.6rem; width:100%; position: relative; z-index: 100000;">
+            <a href="/" class="btn-secondary" style="text-align:center; padding: 0.7rem; border-color: rgba(255,255,255,0.3); color: white; background: rgba(255,255,255,0.08); text-decoration: none; border-radius: var(--radius-sm); font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-house"></i> Về Trang Chủ
+            </a>
+            <form th:action="@{/logout}" method="post" style="display:flex; flex-direction:column; margin:0;">
+                <button type="submit" class="btn-secondary" style="text-align:center; padding: 0.7rem; border-color: var(--danger); color: white; background: var(--danger); box-shadow:none; justify-content:center; cursor:pointer; border-radius: var(--radius-sm); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- UNIFIED ADMIN / STAFF TOP SEARCH BAR -->
+    <div class="admin-topbar" th:fragment="admin_topbar(title, placeholder)">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" class="admin-mobile-menu-btn" onclick="toggleAdminMobileSidebar()" aria-label="Mở menu POS" style="display: none; background: var(--bg-cream); border: 1px solid var(--border-color); color: var(--text-dark); width: 40px; height: 40px; border-radius: 8px; align-items: center; justify-content: center; font-size: 1.25rem; cursor: pointer; transition: 0.3s;">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-dark); display: flex; align-items: center; gap: 10px; font-weight: 700;">
+                <i class="fa-solid fa-layer-group" style="color: var(--primary);"></i> <span th:text="${title}">Quản lý</span>
+            </h2>
+        </div>
+        <div class="admin-search-box">
+            <i class="fa-solid fa-search"></i>
+            <input type="text" th:placeholder="${placeholder ?: 'Tìm kiếm nhanh bàn, đơn hàng, nguyên liệu...'}" id="adminQuickSearchInput" oninput="filterAdminContent(this.value)">
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button type="button" onclick="toggleThemeMode()" style="background: var(--bg-cream); border: 1px solid var(--border-color); color: var(--text-dark); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;" title="Chuyển đổi Sáng / Tối">
+                <i class="fa-solid fa-moon theme-icon"></i>
+            </button>
+            <div class="admin-user-info">
+                <span class="admin-user-badge">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span th:text="${#authentication.name}">Admin</span>
+                </span>
+            </div>
+        </div>
+        <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.addEventListener("DOMContentLoaded", function() {
+                    document.body.classList.add('dark-mode');
+                    document.querySelectorAll('.theme-icon').forEach(i => { i.className = 'fa-solid fa-sun theme-icon'; });
+                });
+            }
+        })();
+        if (typeof window.toggleThemeMode !== 'function') {
+            window.toggleThemeMode = function() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-mode');
+                if (isDark) {
+                    document.documentElement.removeAttribute('data-theme');
+                    document.body.classList.remove('dark-mode');
+                    localStorage.setItem('theme', 'light');
+                    document.querySelectorAll('.theme-icon').forEach(i => { i.className = 'fa-solid fa-moon theme-icon'; });
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    document.body.classList.add('dark-mode');
+                    localStorage.setItem('theme', 'dark');
+                    document.querySelectorAll('.theme-icon').forEach(i => { i.className = 'fa-solid fa-sun theme-icon'; });
+                }
+            };
+        }
+        function toggleAdminMobileSidebar() {
+            const sidebar = document.querySelector('.admin-sidebar');
+            const overlay = document.getElementById('admin-mobile-sidebar-overlay');
+            if (!sidebar) return;
+            if (sidebar.classList.contains('mobile-open')) {
+                sidebar.classList.remove('mobile-open');
+                if (overlay) {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.style.display = 'none', 300);
+                }
+                document.body.style.overflow = '';
+            } else {
+                if (overlay) {
+                    overlay.style.display = 'block';
+                    setTimeout(() => overlay.style.opacity = '1', 10);
+                }
+                sidebar.classList.add('mobile-open');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+        function filterAdminContent(query) {
+            query = query.toLowerCase().trim();
+            document.querySelectorAll('.table-node, .stat-card, .admin-table tbody tr, .inventory-card, .order-card').forEach(el => {
+                const text = el.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    el.style.display = '';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        }
+        function printBillDevelopmentNotice(e) {
+            if (e) e.preventDefault();
+            alert('🛠️ Tính năng in hóa đơn (In Bill) đang được phát triển & nâng cấp trong phiên bản tiếp theo!');
+        }
+        function handleTableNodeClick(tableId, tableNumber, status) {
+            window.location.href = '/admin/table-detail?id=' + tableId;
+        }
+        </script>
+    </div>
+
+    <!-- BACKWARD COMPATIBILITY HEADER FOR ADMIN -->
+    <header class="navbar" th:fragment="header" style="display:none;"></header>
+
+    <!-- FLOATING CONTACT & AI CHATBOT WIDGET -->
+    <div th:fragment="floating_contact">
+        <div class="floating-widget-container">
+            <!-- AI Chatbot Modal Box -->
+            <div id="aiChatModal" class="floating-modal ai-chat-modal" style="display: none;">
+                <div class="floating-modal-header ai-header">
+                    <div class="ai-header-info">
+                        <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
+                        <div>
+                            <h4>Trợ lý AI Bún Bò</h4>
+                            <span class="ai-status"><i class="fa-solid fa-circle" style="color: #2ECC71; font-size: 8px;"></i> Đang hoạt động 24/7</span>
+                        </div>
+                    </div>
+                    <button class="btn-close-modal" onclick="toggleAiChat()" aria-label="Đóng"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="ai-chat-body" id="aiChatBody">
+                    <div class="chat-msg ai-msg">
+                        <div class="msg-bubble">Xin chào! Tôi là Trợ lý AI của quán Bún Bò Gia Truyền. Tôi có thể giúp gì cho bạn hôm nay? 🍜</div>
+                    </div>
+                </div>
+                <div class="ai-quick-chips" style="display:flex; flex-wrap:wrap; gap:6px; padding:8px 12px; background:rgba(0,0,0,0.02); border-top:1px solid rgba(0,0,0,0.05);">
+                    <button type="button" onclick="sendQuickAi('Món bán chạy và báo giá?')" style="background:var(--bg-cream);border:1px solid #EAEAEA;padding:4px 10px;border-radius:15px;font-size:11px;cursor:pointer;font-weight:600;">🔥 Món hot & Giá</button>
+                    <button type="button" onclick="sendQuickAi('Xem giỏ hàng và thanh toán ở đâu?')" style="background:var(--bg-cream);border:1px solid #EAEAEA;padding:4px 10px;border-radius:15px;font-size:11px;cursor:pointer;font-weight:600;">🛒 Giỏ hàng</button>
+                    <button type="button" onclick="sendQuickAi('Pass wifi của quán là gì?')" style="background:var(--bg-cream);border:1px solid #EAEAEA;padding:4px 10px;border-radius:15px;font-size:11px;cursor:pointer;font-weight:600;">📶 Pass Wifi</button>
+                    <button type="button" onclick="sendQuickAi('Làm sao để bật chế độ tối Dark Mode?')" style="background:var(--bg-cream);border:1px solid #EAEAEA;padding:4px 10px;border-radius:15px;font-size:11px;cursor:pointer;font-weight:600;">🌓 Chế độ tối</button>
+                    <button type="button" onclick="sendQuickAi('Quán có hỗ trợ thanh toán chuyển khoản không?')" style="background:var(--bg-cream);border:1px solid #EAEAEA;padding:4px 10px;border-radius:15px;font-size:11px;cursor:pointer;font-weight:600;">💳 Thanh toán</button>
+                </div>
+                <div class="ai-chat-footer">
+                    <input type="text" id="aiInput" placeholder="Hỏi tôi tên món, giá tiền, vị trí..." onkeypress="if(event.key === 'Enter') sendAiMsg();">
+                    <button type="button" onclick="sendAiMsg()" class="btn-send-ai" aria-label="Gửi tin nhắn"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+
+            <!-- Zalo & Hotline Popover Box -->
+            <div id="contactPopover" class="floating-modal contact-popover" style="display: none;">
+                <div class="floating-modal-header contact-header">
+                    <h4><i class="fa-solid fa-headset"></i> Liên Hệ Hỗ Trợ Nhanh</h4>
+                    <button class="btn-close-modal" onclick="toggleContactPopover()" aria-label="Đóng"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="contact-body">
+                    <p class="contact-desc">Chúng tôi sẵn sàng phục vụ bạn từ 6:00 đến 22:00 mỗi ngày.</p>
+                    <a href="https://zalo.me/0987654321" target="_blank" class="contact-item zalo-item">
+                        <div class="contact-icon zalo-icon">Zalo</div>
+                        <div class="contact-info">
+                            <strong>Chat Zalo Trực Tuyến</strong>
+                            <span>zalo.me/0987.654.321 (Số mẫu)</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                    <a href="tel:0987654321" class="contact-item phone-item">
+                        <div class="contact-icon phone-icon"><i class="fa-solid fa-phone-volume"></i></div>
+                        <div class="contact-info">
+                            <strong>Hotline Đặt Bàn / Giao Hàng</strong>
+                            <span>0987.654.321 (Số mẫu)</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Floating Buttons Stack -->
+            <div class="floating-btn-group">
+                <button type="button" class="btn-floating btn-ai" onclick="toggleAiChat()" title="Trợ lý ảo AI Chatbot">
+                    <div class="pulse-ring ai-ring"></div>
+                    <i class="fa-solid fa-robot"></i>
+                    <span class="floating-label">Trợ lý AI</span>
+                </button>
+                <button type="button" class="btn-floating btn-contact" onclick="toggleContactPopover()" title="Liên hệ Zalo / Hotline">
+                    <div class="pulse-ring contact-ring"></div>
+                    <i class="fa-solid fa-phone"></i>
+                    <span class="floating-label">Liên hệ</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Inline Script for AI, Contact & Theme Toggle logic -->
+        <script>
+            function toggleThemeMode() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-mode');
+                if (isDark) {
+                    document.documentElement.removeAttribute('data-theme');
+                    document.body.classList.remove('dark-mode');
+                    localStorage.setItem('theme', 'light');
+                    document.querySelectorAll('.theme-icon').forEach(i => { i.className = 'fa-solid fa-moon theme-icon'; });
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    document.body.classList.add('dark-mode');
+                    localStorage.setItem('theme', 'dark');
+                    document.querySelectorAll('.theme-icon').forEach(i => { i.className = 'fa-solid fa-sun theme-icon'; });
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", function() {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    document.querySelectorAll('.theme-icon').forEach(i => { i.className = 'fa-solid fa-sun theme-icon'; });
+                }
+            });
+
+            function toggleAiChat() {
+                const modal = document.getElementById('aiChatModal');
+                const contactPopover = document.getElementById('contactPopover');
+                if (modal.style.display === 'none' || !modal.style.display) {
+                    modal.style.display = 'flex';
+                    contactPopover.style.display = 'none';
+                    document.getElementById('aiInput').focus();
+                } else {
+                    modal.style.display = 'none';
+                }
+            }
+
+            function toggleContactPopover() {
+                const popover = document.getElementById('contactPopover');
+                const aiModal = document.getElementById('aiChatModal');
+                if (popover.style.display === 'none' || !popover.style.display) {
+                    popover.style.display = 'block';
+                    aiModal.style.display = 'none';
+                } else {
+                    popover.style.display = 'none';
+                }
+            }
+
+            function sendQuickAi(text) {
+                document.getElementById('aiInput').value = text;
+                sendAiMsg();
+            }
+
+            function sendAiMsg() {
+                const input = document.getElementById('aiInput');
+                const text = input.value.trim();
+                if (!text) return;
+
+                const body = document.getElementById('aiChatBody');
+                const userDiv = document.createElement('div');
+                userDiv.className = 'chat-msg user-msg';
+                userDiv.innerHTML = `<div class="msg-bubble">${text}</div>`;
+                body.appendChild(userDiv);
+                input.value = '';
+                body.scrollTop = body.scrollHeight;
+
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'chat-msg ai-msg typing';
+                typingDiv.innerHTML = `<div class="msg-bubble"><i class="fa-solid fa-ellipsis fa-fade"></i> Đang suy nghĩ...</div>`;
+                body.appendChild(typingDiv);
+                body.scrollTop = body.scrollHeight;
+
+                setTimeout(() => {
+                    if (typingDiv.parentNode) body.removeChild(typingDiv);
+                    const aiDiv = document.createElement('div');
+                    aiDiv.className = 'chat-msg ai-msg';
+                    aiDiv.innerHTML = `<div class="msg-bubble">${getAiResponse(text)}</div>`;
+                    body.appendChild(aiDiv);
+                    body.scrollTop = body.scrollHeight;
+                }, 600);
+            }
+
+            function getAiResponse(q) {
+                const lower = q.toLowerCase();
+                
+                // 1. CHUYỂN ĐỔI GIAO DIỆN SÁNG / TỐI (DARK MODE)
+                if (lower.includes('tối') || lower.includes('sáng') || lower.includes('dark mode') || lower.includes('light mode') || lower.includes('đổi màu') || lower.includes('giao diện')) {
+                    return `🌓 Quán có hỗ trợ **Chế Độ Sáng / Tối (Dark Mode)** giúp bảo vệ mắt khi bấm nút hình Mặt Trăng / Mặt Trời trên góc trên Header!<br><br><button onclick="toggleThemeMode()" style="background:#2C3E50;color:white;border:none;padding:6px 14px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-circle-half-stroke"></i> Đổi Giao Diện Sáng/Tối Ngay</button>`;
+                }
+                
+                // 2. HƯỚNG DẪN VỊ TRÍ GIỎ HÀNG & THANH TOÁN
+                if (lower.includes('giỏ hàng') || lower.includes('xem giỏ') || lower.includes('giỏ ở đâu') || lower.includes('thanh toán') || lower.includes('đặt món')) {
+                    return `🛒 **Giỏ hàng của bạn** nằm ở góc phải trên cùng của thanh điều hướng (hoặc bấm biểu tượng xe đẩy). Tại đó bạn có thể kiểm tra món, số lượng và tiến hành thanh toán!<br><br><button onclick="toggleCartSidebar(); toggleAiChat();" style="background:#27AE60;color:white;border:none;padding:6px 14px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-shopping-cart"></i> Mở Giỏ Hàng Ngay</button>`;
+                }
+                
+                // 3. HƯỚNG DẪN VỊ TRÍ TRANG CÁ NHÂN & MÓN YÊU THÍCH
+                if (lower.includes('trang cá nhân') || lower.includes('cá nhân') || lower.includes('hồ sơ') || lower.includes('món yêu thích') || lower.includes('món đã lưu') || lower.includes('thả tim') || lower.includes('wishlist') || lower.includes('đổi mật khẩu') || lower.includes('avatar')) {
+                    return `👤 **Trang Cá Nhân & Món Yêu Thích**: Bạn bấm vào nút Avatar hình người ở góc phải Header để truy cập Trang cá nhân. Tại đó bạn có thể đổi tên, ảnh đại diện, địa chỉ và xem lại danh sách món đã thả tim!<br><br><button onclick="window.location.href='/profile'" style="background:#2980B9;color:white;border:none;padding:6px 14px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-user"></i> Đến Trang Cá Nhân</button>`;
+                }
+                
+                // 4. HƯỚNG DẪN TÌM KIẾM & LỌC NÂNG CAO
+                if (lower.includes('tìm kiếm') || lower.includes('tìm món') || lower.includes('lọc giá') || lower.includes('lọc món') || lower.includes('bộ lọc') || lower.includes('search')) {
+                    return `🔍 Bạn có thể nhập từ khóa ngay vào **Thanh tìm kiếm trên Header** hoặc truy cập vào trang **Tìm kiếm & Lọc nâng cao** để phân loại món theo mức giá, nước uống, hoặc món ăn kèm!<br><br><button onclick="window.location.href='/search'" style="background:#8E44AD;color:white;border:none;padding:6px 14px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-sliders"></i> Mở Bộ Lọc Nâng Cao</button>`;
+                }
+                
+                // 5. HƯỚNG DẪN ĐĂNG NHẬP / ĐĂNG KÝ
+                if (lower.includes('đăng nhập') || lower.includes('đăng ký') || lower.includes('tài khoản') || lower.includes('login') || lower.includes('quên mật khẩu')) {
+                    return `🔐 Để đăng nhập hoặc đăng ký thành viên mới, bạn bấm vào nút biểu tượng hình người tròn trên góc phải màn hình nhé.<br><br><div style="display:flex;gap:6px;margin-top:6px;"><button onclick="window.location.href='/login'" style="background:var(--primary);color:white;border:none;padding:5px 12px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;">Đăng Nhập</button> <button onclick="window.location.href='/register'" style="background:var(--secondary);color:white;border:none;padding:5px 12px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;">Đăng Ký</button></div>`;
+                }
+
+                // 6. GIỚI THIỆU QUÁN & NGƯỜI SÁNG LẬP LÊ ĐỨC LƯƠNG
+                if (lower.includes('chủ quán') || lower.includes('lê đức lương') || lower.includes('ai tạo') || lower.includes('sáng lập') || lower.includes('về chúng tôi') || lower.includes('giới thiệu') || lower.includes('câu chuyện') || lower.includes('about')) {
+                    return `🏛️ Quán **Bún Bò Gia Truyền** do Người sáng lập **Lê Đức Lương** tâm huyết gầy dựng với công thức hầm xương 24 giờ thơm lừng, đậm đà chuẩn vị Cố Đô.<br><br><button onclick="window.location.href='/about'" style="background:#D35400;color:white;border:none;padding:6px 14px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-circle-info"></i> Câu Chuyện Thương Hiệu</button>`;
+                }
+
+                // 7. CÂU HỎI PHỔ BIẾN KHI ĐI ĂN: WIFI, THANH TOÁN, GIỜ MỞ CỬA, ĐỂ XE, ĐỘ CAY
+                if (lower.includes('wifi') || lower.includes('pass') || lower.includes('mật khẩu wifi') || lower.includes('mạng')) {
+                    return `📶 **Wifi Miễn Phí Tại Quán**:<br>• Tên Wifi: **Bun Bo Gia Truyen - 5G**<br>• Mật khẩu: **bunbogiatruyen2026** (hoặc **0987654321**)`;
+                }
+                if (lower.includes('chuyển khoản') || lower.includes('quét qr') || lower.includes('vietqr') || lower.includes('thẻ') || lower.includes('tiền mặt') || lower.includes('atm')) {
+                    return `💳 **Phương Thức Thanh Toán**:<br>Quán hỗ trợ thanh toán Tiền mặt, Quét mã VietQR tự động nhập số tiền cực nhanh, và Thẻ ngân hàng ATM/Visa/Mastercard.`;
+                }
+                if (lower.includes('giờ') || lower.includes('mở cửa') || lower.includes('đóng cửa') || lower.includes('khi nào') || lower.includes('địa chỉ') || lower.includes('ở đâu')) {
+                    return `⏰ **Giờ Mở Cửa**: 06:00 sáng - 22:00 tối hằng ngày.<br>📍 **Địa chỉ**: 123 Đường Số 4, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh.<br><br><button onclick="window.location.href='/about'" style="background:var(--primary);color:white;border:none;padding:5px 12px;border-radius:15px;font-size:12px;cursor:pointer;">Xem Bản Đồ Quán</button>`;
+                }
+                if (lower.includes('xe') || lower.includes('đỗ xe') || lower.includes('gửi xe') || lower.includes('ô tô') || lower.includes('xe máy') || lower.includes('bãi giữ xe')) {
+                    return `🅿️ **Bãi Đỗ Xe An Toàn**:<br>Quán có giữ xe máy miễn phí ngay trước cửa có nhân viên bảo vệ trông coi, và chỗ đậu xe ô tô cách quán 30m cực kỳ rộng rãi và an toàn!`;
+                }
+                if (lower.includes('cay') || lower.includes('ớt') || lower.includes('sa tế') || lower.includes('nước dùng') || lower.includes('rau') || lower.includes('xin thêm')) {
+                    return `🌶️ **Hương Vị & Tuỳ Chọn**:<br>Nước dùng bún bò được nấu chuẩn vị Huế có độ cay nhẹ vừa ăn. Nếu không ăn cay hoặc muốn xin thêm nước dùng, rau sống, sa tế, bạn cứ ghi chú vào đơn hàng hoặc báo nhân viên nhé!`;
+                }
+
+                // 8. TRA CỨU TÊN MÓN ĂN & GIÁ TIỀN (THỰC ĐƠN / MENU DATABASE)
+                if (lower.includes('đặc biệt') || lower.includes('bán chạy') || lower.includes('món hot') || lower.includes('ngon nhất') || lower.includes('65')) {
+                    return `🍜 **Bún Bò Đặc Biệt Gia Truyền (65.000đ)**<br>Món bán chạy nhất quán với đầy đủ bắp bò hoa, nạm, gân, chả cua Huế và móng bò béo ngậy!<br><br><button onclick="window.location.href='/menu'" style="background:var(--primary);color:white;border:none;padding:5px 12px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-utensils"></i> Xem & Gọi Trên Thực Đơn</button>`;
+                }
+                if (lower.includes('bắp') || lower.includes('bắp hoa') || lower.includes('bắp bò') || lower.includes('55')) {
+                    return `🥩 **Bún Bò Bắp Hoa (55.000đ)**<br>Sử dụng bắp hoa bò tươi thái mỏng giòn ngọt, kết hợp nước dùng thơm lừng sả bò.<br><br><button onclick="window.location.href='/menu'" style="background:var(--primary);color:white;border:none;padding:5px 12px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-utensils"></i> Xem & Gọi Trên Thực Đơn</button>`;
+                }
+                if (lower.includes('nạm') || lower.includes('chả cua') || lower.includes('gân') || lower.includes('tái') || lower.includes('50') || lower.includes('rẻ nhất')) {
+                    return `🥣 **Các Món Bún Bò Đồng Giá 50.000đ**:<br>• Bún Bò Nạm Chả<br>• Bún Bò Gân Chả<br>• Bún Bò Tái Nạm<br>Tất cả đều đầy đặn thịt và chả cua Huế đặc sản!<br><br><button onclick="window.location.href='/menu'" style="background:var(--primary);color:white;border:none;padding:5px 12px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-utensils"></i> Xem & Gọi Trên Thực Đơn</button>`;
+                }
+                if (lower.includes('uống') || lower.includes('nước') || lower.includes('trà') || lower.includes('mía') || lower.includes('giải khát')) {
+                    return `🥤 **Thực Đơn Nước Uống & Giải Khát**:<br>• Trà Đá / Trà Sâm Dứa: 5.000đ - 10.000đ<br>• Nước Mía Lại Thảo / Nước Ngọt: 15.000đ - 20.000đ<br><br><button onclick="window.location.href='/menu'" style="background:var(--primary);color:white;border:none;padding:5px 12px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-utensils"></i> Xem Đồ Uống Trên Thực Đơn</button>`;
+                }
+                if (lower.includes('thực đơn') || lower.includes('menu') || lower.includes('có món gì') || lower.includes('danh sách') || lower.includes('giá bao nhiêu') || lower.includes('món ăn')) {
+                    return `📜 **Bảng Giá Thực Đơn Quán Bún Bò Gia Truyền**:<br>• Bún Bò Đặc Biệt: **65.000đ**<br>• Bún Bò Bắp Hoa: **55.000đ**<br>• Bún Bò Nạm/Gân/Tái: **50.000đ**<br>• Nước giải khát: **5.000đ - 20.000đ**<br><br><button onclick="window.location.href='/menu'" style="background:var(--primary);color:white;border:none;padding:6px 14px;border-radius:15px;font-size:12px;cursor:pointer;font-weight:600;"><i class="fa-solid fa-utensils"></i> Mở Menu Gọi Món Ngay</button>`;
+                }
+
+                // 9. CÁC CÂU HỎI KHÁC / LỜI CHÀO
+                if (lower.includes('chào') || lower.includes('hi') || lower.includes('hello') || lower.includes('xin chào') || lower.includes('có ai ở đó không')) {
+                    return `👋 Chào bạn! Tôi là Trợ lý AI Bún Bò Gia Truyền. Bạn muốn hỏi tên món, xem giá tiền, tìm pass wifi, hay cần hướng dẫn thao tác gì trên web? Hãy gõ câu hỏi cho tôi nhé!`;
+                }
+
+                return `✨ Cảm ơn bạn đã trò chuyện! Bạn có thể bấm các nút gợi ý ở trên hoặc hỏi tôi về: **"Món bán chạy"**, **"Giá bún bò đặc biệt"**, **"Giỏ hàng ở đâu"**, **"Pass wifi"**, hoặc **"Bật chế độ tối"**. Nếu cần hỗ trợ khẩn cấp, vui lòng gọi Hotline **0987.654.321** nhé!`;
+            }
+        </script>
+    </div>
+
+    <!-- RICH COMMERCIAL FOOTER -->
+    <footer class="main-footer" th:fragment="footer" style="background: linear-gradient(180deg, #2C3E50 0%, #1A252F 100%); color: rgba(255,255,255,0.8); padding: 4rem 1.5rem 1.5rem; margin-top: 4rem; border-top: 4px solid var(--primary); font-family: var(--font-body);">
+        <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2.5rem; margin-bottom: 3rem;">
+            <!-- Col 1: Brand -->
+            <div>
+                <a href="/" style="display: flex; align-items: center; gap: 10px; color: white; text-decoration: none; font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; font-family: var(--font-heading);">
+                    <i class="fa-solid fa-bowl-hot" style="color: var(--primary);"></i>
+                    <span>Bún Bò <span style="color: var(--primary);">Gia Truyền</span></span>
+                </a>
+                <p style="line-height: 1.7; font-size: 0.95rem; color: rgba(255,255,255,0.7); margin-bottom: 1.2rem;">
+                    Hương vị Cố Đô truyền thống với nước dùng hầm xương 24 giờ, 100% nguyên liệu sạch và công thức gia truyền trứ danh.
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <a href="https://facebook.com" target="_blank" style="width: 38px; height: 38px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; transition: 0.3s;" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="https://zalo.me/0987654321" target="_blank" style="width: 38px; height: 38px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; transition: 0.3s;" title="Zalo"><span style="font-weight: bold; font-size: 0.75rem;">Zalo</span></a>
+                    <a href="https://tiktok.com" target="_blank" style="width: 38px; height: 38px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; transition: 0.3s;" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="https://instagram.com" target="_blank" style="width: 38px; height: 38px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; transition: 0.3s;" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+
+            <!-- Col 2: Quick Links -->
+            <div class="footer-col-quicklinks">
+                <h4 style="color: white; font-size: 1.15rem; margin-bottom: 1.2rem; position: relative; padding-bottom: 8px; border-bottom: 2px solid var(--primary); display: inline-block; font-family: var(--font-heading);">Khám Phá Nhanh</h4>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem;">
+                    <li><a href="/" style="color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.3s;"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem; color: var(--primary); margin-right: 6px;"></i> Trang chủ</a></li>
+                    <li><a href="/menu" style="color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.3s;"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem; color: var(--primary); margin-right: 6px;"></i> Thực đơn món ăn</a></li>
+                    <li><a href="/search" style="color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.3s;"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem; color: var(--primary); margin-right: 6px;"></i> Tìm kiếm & Lọc nâng cao</a></li>
+                    <li><a href="/about" style="color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.3s;"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem; color: var(--primary); margin-right: 6px;"></i> Về chúng tôi</a></li>
+                    <li><a href="javascript:void(0)" onclick="toggleCartSidebar()" style="color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.3s;"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem; color: var(--primary); margin-right: 6px;"></i> Giỏ hàng đặt món</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 3: Contact Info -->
+            <div>
+                <h4 style="color: white; font-size: 1.15rem; margin-bottom: 1.2rem; position: relative; padding-bottom: 8px; border-bottom: 2px solid var(--primary); display: inline-block; font-family: var(--font-heading);">Thông Tin Liên Hệ</h4>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; font-size: 0.95rem;">
+                    <li style="display: flex; gap: 12px; align-items: flex-start;">
+                        <i class="fa-solid fa-location-dot" style="color: var(--primary); margin-top: 4px; font-size: 1.1rem;"></i>
+                        <span>123 Đường Số 4, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh</span>
+                    </li>
+                    <li style="display: flex; gap: 12px; align-items: center;">
+                        <i class="fa-solid fa-phone-volume" style="color: var(--primary); font-size: 1.1rem;"></i>
+                        <span>Hotline: <strong style="color: white;">0987.654.321</strong> (Mẫu)</span>
+                    </li>
+                    <li style="display: flex; gap: 12px; align-items: center;">
+                        <i class="fa-solid fa-clock" style="color: var(--primary); font-size: 1.1rem;"></i>
+                        <span>Giờ mở cửa: <strong style="color: #2ECC71;">06:00 - 22:00</strong> (Hằng ngày)</span>
+                    </li>
+                    <li style="display: flex; gap: 12px; align-items: center;">
+                        <i class="fa-solid fa-envelope" style="color: var(--primary); font-size: 1.1rem;"></i>
+                        <span>Email: luang@bunbogiatruyen.vn</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Col 4: Quality & Policies -->
+            <div>
+                <h4 style="color: white; font-size: 1.15rem; margin-bottom: 1.2rem; position: relative; padding-bottom: 8px; border-bottom: 2px solid var(--primary); display: inline-block; font-family: var(--font-heading);">Cam Kết Chất Lượng</h4>
+                <p style="font-size: 0.95rem; line-height: 1.7; color: rgba(255,255,255,0.7); margin-bottom: 1.2rem;">
+                    Nhà hàng đạt chứng nhận An toàn Vệ sinh Thực phẩm. Luôn sẵn sàng lắng nghe ý kiến đóng góp từ quý khách.
+                </p>
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                    <i class="fa-solid fa-shield-heart" style="color: var(--secondary); font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                    <div style="font-weight: 600; color: white;">Hoàn tiền 100%</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Nếu thực khách không hài lòng về chất lượng món ăn</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Copyright -->
+        <div style="max-width: 1200px; margin: 0 auto; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; font-size: 0.9rem; color: rgba(255,255,255,0.6); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+            <div>
+                &copy; 2026 <strong>Bún Bò Gia Truyền</strong>. Phát triển và thiết kế bởi <span style="color: var(--secondary); font-weight: 600;">Lê Đức Lương</span>.
+            </div>
+            <div style="display: flex; gap: 1.5rem;">
+                <a href="/about" style="color: inherit; text-decoration: none;">Chính sách bảo mật</a>
+                <a href="/about" style="color: inherit; text-decoration: none;">Điều khoản dịch vụ</a>
+                <a href="/about" style="color: inherit; text-decoration: none;">Hỗ trợ khách hàng</a>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
+

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Bàn Ăn - Bún Bò Gia Truyền</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .table-admin-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .table-admin-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+        .qr-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-light);
+            color: var(--secondary);
+            padding: 0.3rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid rgba(211, 84, 0, 0.2);
+            transition: var(--transition);
+        }
+        .qr-badge:hover {
+            background: var(--secondary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside th:replace="fragments/layout :: admin_sidebar('tables')"></aside>
+
+        <main class="admin-content" style="display:grid; grid-template-columns: 1fr 380px; gap: 2rem;">
+            <!-- TOPBAR -->
+            <div style="grid-column: 1 / -1;">
+                <div th:replace="fragments/layout :: admin_topbar('Quản Lý Bàn Ăn & Sơ Đồ Nhà Hàng', 'Tìm kiếm nhanh số bàn, trạng thái...')"></div>
+            </div>
+
+            <!-- LEFT COLUMN: TABLES GRID & CRUD TABLE -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0; font-size:1.8rem; color:var(--text-dark);"><i class="fa-solid fa-chair" style="color:var(--primary);"></i> Sơ Đồ Bàn Ăn Hiện Tại</h2>
+                    <span style="font-size:0.95rem; color:var(--text-light);"><i class="fa-solid fa-circle-info"></i> Nhấp vào bàn để xem chi tiết hoặc hướng dẫn QR</span>
+                </div>
+
+                <div class="tables-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+                    <div th:each="tbl : ${tables}" class="table-node" 
+                         th:classappend="${tbl.status == 'FREE'} ? 'free' : (${tbl.status == 'OCCUPIED'} ? 'occupied' : 'ordering')"
+                         th:attr="onclick=|handleTableNodeClick(${tbl.id}, '${tbl.tableNumber}', '${tbl.status}')|">
+                        <i class="fa-solid fa-utensils" style="font-size: 1.4rem; margin-bottom: 8px; opacity: 0.8;"></i>
+                        <span th:text="${tbl.tableNumber}" style="font-size: 1.15rem; font-weight: 700;">Bàn 1</span>
+                        <div style="font-size:0.78rem; font-weight:600; margin-top:6px; padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,0.7);" 
+                             th:text="${tbl.status == 'FREE' ? '🟢 Trống' : (tbl.status == 'OCCUPIED' ? '🔴 Có khách' : '🟡 Đang gọi')}">Trống</div>
+                    </div>
+                </div>
+
+                <!-- TABLE LIST FOR QUICK CRUD & QR SIMULATION -->
+                <div class="table-admin-card">
+                    <h3 style="margin-top:0; border-bottom:2px solid var(--bg-cream); padding-bottom:0.75rem;"><i class="fa-solid fa-list-check"></i> Danh Sách & Mã QR Bàn Ăn</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên Bàn / Số Bàn</th>
+                                <th>Trạng Thái</th>
+                                <th>Mã QR Đặt Món</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="tbl : ${tables}">
+                                <td th:text="'#' + ${tbl.id}">#1</td>
+                                <td style="font-weight: 700; color: var(--text-dark);" th:text="${tbl.tableNumber}">Bàn 1</td>
+                                <td>
+                                    <span th:class="${tbl.status == 'FREE' ? 'status-badge status-PENDING' : 'status-badge status-COMPLETED'}"
+                                          th:style="${tbl.status == 'FREE' ? 'background:#E8F8F5; color:#27AE60;' : 'background:#FDEDEC; color:#C0392B;'}"
+                                          th:text="${tbl.status == 'FREE' ? 'Bàn trống' : (tbl.status == 'OCCUPIED' ? 'Đang phục vụ' : 'Đang gọi món')}">Trống</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/menu(tableId=${tbl.id})}" target="_blank" class="qr-badge" title="Mở link mô phỏng quét mã QR tại bàn này">
+                                        <i class="fa-solid fa-qrcode"></i> Quét QR / Menu Bàn
+                                    </a>
+                                </td>
+                                <td>
+                                    <div style="display:flex; gap:8px;">
+                                        <button type="button" th:attr="onclick=|editTable(${tbl.id}, '${tbl.tableNumber}', '${tbl.status}')|" class="btn-secondary" style="padding: 0.4rem 0.7rem; font-size:0.85rem;" title="Chỉnh sửa bàn">
+                                            <i class="fa-solid fa-pen"></i> Sửa
+                                        </button>
+                                        <form th:action="@{/admin/tables/delete/{id}(id=${tbl.id})}" method="post" style="margin:0;" onsubmit="return confirm('Bạn có chắc muốn xóa bàn ăn này?');">
+                                            <button type="submit" class="btn-secondary" style="padding: 0.4rem 0.7rem; font-size:0.85rem; border-color: var(--danger); color: var(--danger);" title="Xóa bàn">
+                                                <i class="fa-solid fa-trash"></i> Xóa
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(tables)}">
+                                <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-light);">Chưa có bàn ăn nào trong hệ thống. Hãy thêm bàn mới bên phải!</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: ADD / EDIT TABLE FORM -->
+            <div>
+                <div class="table-admin-card" style="position: sticky; top: 2rem;">
+                    <h3 id="formTitle" style="margin-top:0; border-bottom:2px solid var(--bg-cream); padding-bottom:0.75rem; color: var(--primary);">
+                        <i class="fa-solid fa-plus-circle"></i> Thêm Bàn Ăn Mới
+                    </h3>
+                    <form th:action="@{/admin/tables/save}" method="post">
+                        <input type="hidden" name="id" id="tableId" value="">
+                        
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <label style="display:block; font-weight:600; margin-bottom:0.5rem; color:var(--text-dark);">Tên Bàn / Số Bàn (*)</label>
+                            <input type="text" name="tableNumber" id="tableNumber" required placeholder="VD: Bàn 1, Bàn 2, VIP 1..." style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:1rem;">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label style="display:block; font-weight:600; margin-bottom:0.5rem; color:var(--text-dark);">Trạng Thái Ban Đầu</label>
+                            <select name="status" id="tableStatus" style="width:100%; padding:0.75rem; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:1rem; background:white;">
+                                <option value="FREE">🟢 Bàn Trống (FREE)</option>
+                                <option value="OCCUPIED">🔴 Có Khách / Đang Phục Vụ (OCCUPIED)</option>
+                                <option value="ORDERING">🟡 Đang Gọi Món (ORDERING)</option>
+                            </select>
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+                            <button type="submit" class="btn-primary" style="flex:1; justify-content:center; padding: 0.85rem;">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu Bàn Ăn
+                            </button>
+                            <button type="button" id="btnCancel" onclick="resetForm()" class="btn-secondary" style="display:none; padding: 0.85rem;">Hủy</button>
+                        </div>
+                    </form>
+
+                    <div style="margin-top: 2rem; padding: 1.25rem; background: var(--bg-cream); border-radius: var(--radius-sm); border-left: 4px solid var(--secondary);">
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--secondary); font-size: 0.95rem;"><i class="fa-solid fa-lightbulb"></i> Hướng dẫn nghiệp vụ</h4>
+                        <p style="margin: 0; font-size: 0.85rem; color: var(--text-dark); line-height: 1.5;">
+                            - Khi khách ngồi vào bàn và gọi món, hệ thống tự động chuyển sang trạng thái <strong>Đang phục vụ</strong>.<br>
+                            - Khi đơn hàng được thanh toán hoặc hoàn tất, bàn sẽ tự động quay về trạng thái <strong>Bàn Trống</strong>.<br>
+                            - Bạn có thể in mã QR của từng bàn dán lên mặt bàn để khách hàng tự quét bằng điện thoại di động!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        function editTable(id, number, status) {
+            document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Cập Nhật Bàn #' + id;
+            document.getElementById('tableId').value = id;
+            document.getElementById('tableNumber').value = number;
+            document.getElementById('tableStatus').value = status;
+            document.getElementById('btnCancel').style.display = 'block';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function resetForm() {
+            document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-plus-circle"></i> Thêm Bàn Ăn Mới';
+            document.getElementById('tableId').value = '';
+            document.getElementById('tableNumber').value = '';
+            document.getElementById('tableStatus').value = 'FREE';
+            document.getElementById('btnCancel').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

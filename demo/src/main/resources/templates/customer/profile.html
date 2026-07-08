@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Trang Cá Nhân - Bún Bò Gia Truyền')}"></head>
+<body>
+
+    <!-- Header Navbar -->
+    <header th:replace="~{fragments/layout :: navbar}"></header>
+
+    <!-- Main Container -->
+    <div style="max-width: 1100px; margin: 3rem auto; padding: 0 1.5rem;">
+        
+        <!-- Alerts -->
+        <div th:if="${param.success != null && param.success[0] == 'profile_updated'}" class="alert-box alert-success" style="margin-bottom: 2rem;">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Cập nhật thông tin cá nhân thành công!</span>
+        </div>
+        <div th:if="${param.success != null && param.success[0] == 'password_updated'}" class="alert-box alert-success" style="margin-bottom: 2rem;">
+            <i class="fa-solid fa-shield-check"></i>
+            <span>Đổi mật khẩu tài khoản thành công!</span>
+        </div>
+        <div th:if="${param.error != null && param.error[0] == 'old_mismatch'}" class="alert-box alert-error" style="margin-bottom: 2rem;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Mật khẩu hiện tại không chính xác! Vui lòng kiểm tra lại.</span>
+        </div>
+        <div th:if="${param.error != null && param.error[0] == 'confirm_mismatch'}" class="alert-box alert-error" style="margin-bottom: 2rem;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Xác nhận mật khẩu mới không khớp!</span>
+        </div>
+
+        <!-- Profile Layout Grid -->
+        <div class="profile-layout-grid" style="display: grid; grid-template-columns: 320px 1fr; gap: 2.5rem; align-items: start;">
+            
+            <!-- Left Column: User Card & Tab Nav -->
+            <div class="profile-sidebar" style="background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; border: 1px solid #F0F0F0; position: sticky; top: 100px;">
+                <!-- Card Header with Banner -->
+                <div style="height: 100px; background: linear-gradient(135deg, var(--primary), var(--secondary)); position: relative;"></div>
+                
+                <!-- Avatar Center -->
+                <div style="text-align: center; margin-top: -55px; padding: 0 1.5rem 1.5rem;">
+                    <div style="width: 110px; height: 110px; margin: 0 auto 1rem; border-radius: 50%; border: 4px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.15); background: var(--bg-cream); overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
+                        <img th:if="${user.avatarUrl != null && !user.avatarUrl.isEmpty()}" th:src="${user.avatarUrl}" th:alt="${user.fullName}" id="avatarPreview" style="width: 100%; height: 100%; object-fit: cover;">
+                        <span th:unless="${user.avatarUrl != null && !user.avatarUrl.isEmpty()}" id="avatarInitials" style="font-size: 2.5rem; font-weight: bold; color: var(--primary);" th:text="${user.fullName != null ? #strings.substring(user.fullName, 0, 1) : 'U'}">U</span>
+                    </div>
+                    
+                    <h2 style="font-size: 1.35rem; color: var(--text-dark); margin: 0 0 0.3rem 0; font-family: var(--font-heading);" th:text="${user.fullName != null ? user.fullName : user.username}">Người dùng</h2>
+                    <p style="color: var(--text-light); font-size: 0.9rem; margin: 0 0 1rem 0;" th:text="'@' + ${user.username}">@username</p>
+                    
+                    <div style="display: inline-block; padding: 0.35rem 1rem; background: #FFF0ED; color: var(--primary); border-radius: 20px; font-size: 0.8rem; font-weight: 600; border: 1px solid #FADBD8;">
+                        <i class="fa-solid fa-crown"></i> <span th:text="${user.role != null ? user.role.name.replace('ROLE_', '') : 'CUSTOMER'}">CUSTOMER</span>
+                    </div>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid #F0F0F0; margin: 0;">
+
+                <!-- Navigation Tabs -->
+                <div style="padding: 1rem 0;" class="profile-tabs-nav">
+                    <button type="button" class="tab-btn active" onclick="switchTab('info', this)" style="width: 100%; text-align: left; padding: 0.85rem 1.5rem; background: transparent; border: none; font-size: 0.95rem; font-weight: 600; color: var(--text-dark); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; border-left: 4px solid var(--primary); background: #FFF9F8;">
+                        <i class="fa-solid fa-id-card" style="color: var(--primary); width: 20px;"></i> Thông tin cá nhân
+                    </button>
+                    <button type="button" class="tab-btn" onclick="switchTab('favorites', this)" style="width: 100%; text-align: left; padding: 0.85rem 1.5rem; background: transparent; border: none; font-size: 0.95rem; font-weight: 600; color: var(--text-light); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; border-left: 4px solid transparent;">
+                        <i class="fa-solid fa-heart" style="color: #E74C3C; width: 20px;"></i> Món ăn yêu thích (<span th:text="${#lists.size(favoriteDishes)}">0</span>)
+                    </button>
+                    <button type="button" class="tab-btn" onclick="switchTab('password', this)" style="width: 100%; text-align: left; padding: 0.85rem 1.5rem; background: transparent; border: none; font-size: 0.95rem; font-weight: 600; color: var(--text-light); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; border-left: 4px solid transparent;">
+                        <i class="fa-solid fa-key" style="color: #F39C12; width: 20px;"></i> Đổi mật khẩu
+                    </button>
+                    <a href="/logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="width: 100%; text-align: left; padding: 0.85rem 1.5rem; font-size: 0.95rem; font-weight: 600; color: #E74C3C; text-decoration: none; display: flex; align-items: center; gap: 12px; transition: 0.2s; border-left: 4px solid transparent;" onmouseover="this.style.background='#FDEDEC'" onmouseout="this.style.background='transparent'">
+                        <i class="fa-solid fa-right-from-bracket" style="width: 20px;"></i> Đăng xuất
+                    </a>
+                    <form id="logout-form" th:action="@{/logout}" method="post" style="display: none;"></form>
+                </div>
+            </div>
+
+            <!-- Right Column: Tab Panels -->
+            <div class="profile-tab-panel" style="background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 2.5rem; border: 1px solid #F0F0F0; min-height: 520px;">
+                
+                <!-- TAB 1: PERSONAL INFO -->
+                <div id="tab-info" class="tab-content" style="display: block;">
+                    <div style="border-bottom: 2px solid #F0F0F0; padding-bottom: 1.2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.5rem; color: var(--text-dark); font-family: var(--font-heading);">Cập Nhật Hồ Sơ Cá Nhân</h3>
+                            <p style="margin: 0.4rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">Quản lý thông tin liên hệ và ảnh đại diện của bạn trên hệ thống Bún Bò Gia Truyền.</p>
+                        </div>
+                        <i class="fa-solid fa-user-pen" style="font-size: 2rem; color: var(--primary); opacity: 0.3;"></i>
+                    </div>
+
+                    <form th:action="@{/profile/update}" method="post" id="profileForm">
+                        <!-- Username (Readonly) -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                <i class="fa-solid fa-user" style="color: var(--primary); margin-right: 6px;"></i> Tên đăng nhập (Username)
+                            </label>
+                            <input type="text" th:value="${user.username}" disabled style="width: 100%; padding: 0.85rem 1rem; border: 1px solid #DDD; border-radius: 8px; background: #F8F9F9; color: #7F8C8D; font-size: 0.95rem; cursor: not-allowed;">
+                            <small style="color: #95A5A6; font-size: 0.8rem; margin-top: 4px; display: block;">Tên đăng nhập không thể thay đổi.</small>
+                        </div>
+
+                        <!-- Full Name -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <label for="fullName" style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                <i class="fa-solid fa-signature" style="color: var(--primary); margin-right: 6px;"></i> Họ và tên <span style="color: red;">*</span>
+                            </label>
+                            <input type="text" id="fullName" name="fullName" th:value="${user.fullName}" required placeholder="Nhập họ và tên của bạn..." style="width: 100%; padding: 0.85rem 1rem; border: 1px solid #CCC; border-radius: 8px; font-size: 0.95rem; transition: 0.3s; outline: none;">
+                        </div>
+
+                        <!-- Avatar URL -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <label for="avatarUrl" style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                <i class="fa-solid fa-image" style="color: var(--primary); margin-right: 6px;"></i> Đường dẫn ảnh đại diện (Avatar URL)
+                            </label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="url" id="avatarUrlInput" name="avatarUrl" th:value="${user.avatarUrl}" placeholder="https://example.com/your-photo.jpg" style="flex: 1; padding: 0.85rem 1rem; border: 1px solid #CCC; border-radius: 8px; font-size: 0.95rem; transition: 0.3s; outline: none;">
+                                <button type="button" onclick="previewAvatar()" class="btn-secondary" style="padding: 0 1.2rem; white-space: nowrap; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-eye"></i> Xem thử
+                                </button>
+                            </div>
+                            <small style="color: #7F8C8D; font-size: 0.8rem; margin-top: 4px; display: block;">Bạn có thể sao chép link ảnh từ Facebook/Google hoặc các trang lưu trữ ảnh trực tuyến.</small>
+                        </div>
+
+                        <!-- Phone -->
+                        <div style="grid-template-columns: 1fr 1fr; gap: 1.5rem; display: grid; margin-bottom: 1.5rem;">
+                            <div>
+                                <label for="phone" style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                    <i class="fa-solid fa-phone" style="color: var(--primary); margin-right: 6px;"></i> Số điện thoại
+                                </label>
+                                <input type="tel" id="phone" name="phone" th:value="${user.phone}" placeholder="0987.xxx.xxx" style="width: 100%; padding: 0.85rem 1rem; border: 1px solid #CCC; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                            </div>
+                            <div>
+                                <label for="email" style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                    <i class="fa-solid fa-envelope" style="color: var(--primary); margin-right: 6px;"></i> Địa chỉ Email
+                                </label>
+                                <input type="email" id="email" name="email" th:value="${user.email}" placeholder="example@gmail.com" style="width: 100%; padding: 0.85rem 1rem; border: 1px solid #CCC; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                            </div>
+                        </div>
+
+                        <!-- Address -->
+                        <div style="margin-bottom: 2.5rem;">
+                            <label for="address" style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                <i class="fa-solid fa-location-dot" style="color: var(--primary); margin-right: 6px;"></i> Địa chỉ giao hàng mặc định
+                            </label>
+                            <textarea id="address" name="address" rows="3" placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, TP..." style="width: 100%; padding: 0.85rem 1rem; border: 1px solid #CCC; border-radius: 8px; font-size: 0.95rem; font-family: inherit; outline: none;" th:text="${user.address}"></textarea>
+                        </div>
+
+                        <div style="text-align: right; border-top: 1px solid #F0F0F0; padding-top: 1.5rem;">
+                            <button type="submit" class="btn-primary" style="padding: 0.9rem 2rem; font-size: 1rem;">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu Cập Nhật Hồ Sơ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- TAB 2: FAVORITE DISHES -->
+                <div id="tab-favorites" class="tab-content" style="display: none;">
+                    <div style="border-bottom: 2px solid #F0F0F0; padding-bottom: 1.2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.5rem; color: var(--text-dark); font-family: var(--font-heading);">Món Ăn Yêu Thích Của Bạn</h3>
+                            <p style="margin: 0.4rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">Danh sách những món bún bò và thức uống bạn đã thả tim lưu lại.</p>
+                        </div>
+                        <i class="fa-solid fa-heart" style="font-size: 2rem; color: #E74C3C; opacity: 0.3;"></i>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div th:if="${#lists.isEmpty(favoriteDishes)}" style="text-align: center; padding: 4rem 2rem; background: #FFF9F8; border-radius: 12px; border: 1px dashed #FADBD8;">
+                        <i class="fa-regular fa-heart" style="font-size: 3.5rem; color: #E74C3C; opacity: 0.5; margin-bottom: 1rem;"></i>
+                        <h4 style="font-size: 1.25rem; color: var(--text-dark); margin: 0 0 0.5rem 0;">Bạn chưa lưu món ăn yêu thích nào!</h4>
+                        <p style="color: var(--text-light); margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                            Khám phá thực đơn phong phú của nhà hàng và nhấn biểu tượng trái tim để lưu lại món tủ của mình nhé!
+                        </p>
+                        <a href="/menu" class="btn-primary" style="display: inline-flex;">
+                            <i class="fa-solid fa-utensils"></i> Xem Thực Đơn Ngay
+                        </a>
+                    </div>
+
+                    <!-- Favorites Grid -->
+                    <div th:unless="${#lists.isEmpty(favoriteDishes)}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem;">
+                        <div class="dish-card" th:each="dish : ${favoriteDishes}" th:id="'fav-card-' + ${dish.id}" style="position: relative;">
+                            <button type="button" th:attr="onclick=|removeFavorite(${dish.id})|" style="position: absolute; top: 10px; left: 10px; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background: white; border: none; box-shadow: 0 3px 8px rgba(0,0,0,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E74C3C; font-size: 1.1rem; transition: 0.2s;" title="Bỏ yêu thích" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                                <i class="fa-solid fa-heart"></i>
+                            </button>
+                            <div class="dish-img-wrapper">
+                                <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" th:src="${dish.imageUrl}" th:alt="${dish.name}" class="dish-img">
+                                <img th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" src="https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop" th:alt="${dish.name}" class="dish-img">
+                                <span class="dish-category-badge" th:text="${dish.category}">Bún Bò</span>
+                            </div>
+                            <div class="dish-info" style="display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
+                                <div>
+                                    <h3 class="dish-name" th:text="${dish.name}">Bún Bò Đặc Biệt</h3>
+                                    <p class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">65,000 đ</p>
+                                </div>
+                                <button class="btn-primary" style="justify-content: center; width: 100%; margin-top: 1rem;" th:attr="onclick=|addToCart(${dish.id}, '${dish.name}', ${dish.price})|">
+                                    <i class="fa-solid fa-cart-plus"></i> Chọn món
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: CHANGE PASSWORD -->
+                <div id="tab-password" class="tab-content" style="display: none;">
+                    <div style="border-bottom: 2px solid #F0F0F0; padding-bottom: 1.2rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.5rem; color: var(--text-dark); font-family: var(--font-heading);">Đổi Mật Khẩu Bảo Mật</h3>
+                            <p style="margin: 0.4rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">Để bảo vệ tài khoản, vui lòng sử dụng mật khẩu mạnh có cả chữ và số.</p>
+                        </div>
+                        <i class="fa-solid fa-shield-halved" style="font-size: 2rem; color: #F39C12; opacity: 0.3;"></i>
+                    </div>
+
+                    <form th:action="@{/profile/password}" method="post" style="max-width: 550px;">
+                        <div style="margin-bottom: 1.5rem;">
+                            <label for="oldPassword" style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                <i class="fa-solid fa-key" style="color: #7F8C8D; margin-right: 6px;"></i> Mật khẩu hiện tại <span style="color: red;">*</span>
+                            </label>
+                            <input type="password" id="oldPassword" name="oldPassword" required placeholder="Nhập mật khẩu hiện tại..." style="width: 100%; padding: 0.85rem 1rem; border: 1px solid #CCC; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label for="newPassword" style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                <i class="fa-solid fa-lock" style="color: var(--primary); margin-right: 6px;"></i> Mật khẩu mới <span style="color: red;">*</span>
+                            </label>
+                            <input type="password" id="newPassword" name="newPassword" required placeholder="Nhập mật khẩu mới..." minlength="6" style="width: 100%; padding: 0.85rem 1rem; border: 1px solid #CCC; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                        </div>
+
+                        <div style="margin-bottom: 2.5rem;">
+                            <label for="confirmPassword" style="display: block; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 0.95rem;">
+                                <i class="fa-solid fa-check-double" style="color: var(--secondary); margin-right: 6px;"></i> Xác nhận mật khẩu mới <span style="color: red;">*</span>
+                            </label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Nhập lại mật khẩu mới..." minlength="6" style="width: 100%; padding: 0.85rem 1rem; border: 1px solid #CCC; border-radius: 8px; font-size: 0.95rem; outline: none;">
+                        </div>
+
+                        <div style="border-top: 1px solid #F0F0F0; padding-top: 1.5rem;">
+                            <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #F39C12, #D35400); border-color: #F39C12; padding: 0.9rem 2rem; font-size: 1rem;">
+                                <i class="fa-solid fa-shield-check"></i> Cập Nhật Mật Khẩu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- CART SIDEBAR SLIDEOUT -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fa-solid fa-shopping-basket" style="color: var(--primary);"></i> Đơn đặt món</h3>
+            <button class="qty-btn" aria-label="Đóng giỏ hàng" onclick="toggleCartSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="cart-items-container" class="cart-items-list">
+            <p style="text-align: center; color: var(--text-light); margin-top: 2rem;">Giỏ hàng của bạn đang trống.</p>
+        </div>
+        <div class="cart-total-section">
+            <div class="cart-total-row">
+                <span>Tổng cộng:</span>
+                <span id="cart-total-price">0 đ</span>
+            </div>
+        </div>
+        <a href="/menu" class="btn-primary" style="width: 100%; justify-content: center; padding: 1rem; text-decoration: none; display: flex;">
+            <i class="fa-solid fa-arrow-right"></i> Đến Thực Đơn Để Đặt Món
+        </a>
+    </div>
+
+    <!-- Script for Profile Tabs & Favorites -->
+    <script th:inline="javascript">
+        // Tab switching logic
+        function switchTab(tabId, btnEl) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.style.background = 'transparent';
+                el.style.borderLeftColor = 'transparent';
+                el.style.color = 'var(--text-light)';
+            });
+
+            const target = document.getElementById('tab-' + tabId);
+            if (target) target.style.display = 'block';
+
+            if (btnEl) {
+                btnEl.style.background = '#FFF9F8';
+                btnEl.style.borderLeftColor = 'var(--primary)';
+                btnEl.style.color = 'var(--text-dark)';
+            }
+            // Update URL hash without scroll
+            history.pushState(null, null, '#' + tabId);
+        }
+
+        // Check hash on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash.replace('#', '');
+            if (hash === 'favorites' || hash === 'password') {
+                const btns = document.querySelectorAll('.tab-btn');
+                let idx = 0;
+                if (hash === 'favorites') idx = 1;
+                if (hash === 'password') idx = 2;
+                switchTab(hash, btns[idx]);
+            }
+
+            // Load cart badge
+            const savedCart = localStorage.getItem('bunbo_cart');
+            if (savedCart) {
+                const cart = JSON.parse(savedCart);
+                const badge = document.getElementById('cart-badge-count');
+                if (badge && cart.length > 0) {
+                    badge.style.display = 'inline-block';
+                    badge.innerText = cart.reduce((sum, item) => sum + item.quantity, 0);
+                }
+            }
+        });
+
+        // Preview Avatar
+        function previewAvatar() {
+            const url = document.getElementById('avatarUrlInput').value.trim();
+            if (!url) {
+                alert('Vui lòng nhập đường dẫn link ảnh hợp lệ!');
+                return;
+            }
+            const preview = document.getElementById('avatarPreview');
+            const initials = document.getElementById('avatarInitials');
+            if (preview) {
+                preview.src = url;
+                preview.style.display = 'block';
+                if (initials) initials.style.display = 'none';
+            } else {
+                const container = initials.parentElement;
+                container.innerHTML = `<img src="${url}" alt="Avatar" id="avatarPreview" style="width: 100%; height: 100%; object-fit: cover;">`;
+            }
+        }
+
+        // Remove favorite via AJAX
+        function removeFavorite(dishId) {
+            if (!confirm('Bạn có chắc muốn bỏ lưu món ăn này khỏi danh sách yêu thích?')) return;
+
+            fetch('/api/favorites/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'dishId=' + dishId
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const card = document.getElementById('fav-card-' + dishId);
+                    if (card) {
+                        card.style.transition = '0.3s';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.8)';
+                        setTimeout(() => card.remove(), 300);
+                    }
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra.');
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        // Add to localstorage cart from favorites
+        function addToCart(id, name, price) {
+            let cart = [];
+            const saved = localStorage.getItem('bunbo_cart');
+            if (saved) cart = JSON.parse(saved);
+
+            const existing = cart.find(item => item.dishId === id);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ dishId: id, name: name, price: price, quantity: 1 });
+            }
+            localStorage.setItem('bunbo_cart', JSON.stringify(cart));
+            
+            // Update badge
+            const badge = document.getElementById('cart-badge-count');
+            if (badge) {
+                badge.style.display = 'inline-block';
+                badge.innerText = cart.reduce((sum, item) => sum + item.quantity, 0);
+            }
+            alert('Đã thêm món "' + name + '" vào giỏ hàng!');
+        }
+
+        function toggleCartSidebar() {
+            const sidebar = document.getElementById('cart-sidebar');
+            if (sidebar) sidebar.classList.toggle('open');
+        }
+    </script>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+
+    <!-- Floating Action Buttons & AI Chatbot -->
+    <div th:replace="~{fragments/layout :: floating_contact}"></div>
+
+</body>
+</html>

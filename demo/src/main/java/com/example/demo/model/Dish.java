@@ -21,6 +21,7 @@ public class Dish {
     @Column(nullable = false)
     private Double price;
     
+    @Column(length = 4000)
     private String imageUrl;
     
     @Column(nullable = false)

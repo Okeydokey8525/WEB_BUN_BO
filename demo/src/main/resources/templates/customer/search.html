@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tìm kiếm & Lọc nâng cao')}"></head>
+<body>
+
+    <!-- Header Navbar -->
+    <header th:replace="~{fragments/layout :: navbar}"></header>
+
+    <div class="menu-container" style="max-width: 1300px; margin: 2rem auto; padding: 0 1.5rem;">
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+            <h2 style="font-size: 2.2rem; color: var(--primary); margin: 0 0 0.5rem 0;"><i class="fa-solid fa-magnifying-glass-chart"></i> Tìm Kiếm & Lọc Nâng Cao</h2>
+            <p style="color: var(--text-light); font-size: 1.05rem;">Khám phá toàn bộ ẩm thực xứ Huế với bộ lọc thông minh, nhanh chóng theo ý thích của bạn</p>
+        </div>
+
+        <div class="search-layout-grid" style="display: grid; grid-template-columns: 300px 1fr; gap: 2rem; align-items: start;">
+            <!-- Left Panel: Advanced Filter Control Suite -->
+            <div class="search-sidebar" style="background: white; border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: var(--shadow-md); border-top: 5px solid var(--primary); position: sticky; top: 90px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bg-light); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0; font-size: 1.25rem; color: var(--text-dark);"><i class="fa-solid fa-sliders" style="color: var(--secondary);"></i> Bộ Lọc Món Ăn</h3>
+                    <button onclick="resetSearchFilters()" style="background: none; border: none; color: var(--danger); font-weight: 600; cursor: pointer; font-size: 0.9rem; padding: 0.3rem 0.6rem; border-radius: 4px; transition: var(--transition);" title="Khôi phục bộ lọc">
+                        <i class="fa-solid fa-rotate-right"></i> Đặt lại
+                    </button>
+                </div>
+
+                <!-- 1. Keyword search -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-dark); font-size: 0.95rem;">
+                        <i class="fa-solid fa-keyboard" style="color: var(--primary);"></i> Từ khóa tìm kiếm:
+                    </label>
+                    <div style="position: relative;">
+                        <i class="fa-solid fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #999;"></i>
+                        <input type="text" id="filterKeyword" th:value="${keyword}" placeholder="Tên món, nguyên liệu..." oninput="applySearchFilters()" 
+                               style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.6rem; border: 1px solid #DDD; border-radius: var(--radius-sm); font-size: 0.95rem; outline: none; transition: var(--transition);">
+                    </div>
+                </div>
+
+                <!-- 2. Category selection -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-dark); font-size: 0.95rem;">
+                        <i class="fa-solid fa-list-ul" style="color: var(--primary);"></i> Danh mục món:
+                    </label>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 0.6rem; font-size: 0.95rem; padding: 0.4rem; border-radius: 4px; transition: var(--transition);">
+                            <input type="radio" name="filterCategory" value="All" th:checked="${category == 'All' || category == ''}" onchange="applySearchFilters()">
+                            <span style="font-weight: 500;">Tất cả danh mục</span>
+                        </label>
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 0.6rem; font-size: 0.95rem; padding: 0.4rem; border-radius: 4px; transition: var(--transition);">
+                            <input type="radio" name="filterCategory" value="Bún Bò" th:checked="${category == 'Bún Bò'}" onchange="applySearchFilters()">
+                            <span style="font-weight: 500;">Bún Bò Huế</span>
+                        </label>
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 0.6rem; font-size: 0.95rem; padding: 0.4rem; border-radius: 4px; transition: var(--transition);">
+                            <input type="radio" name="filterCategory" value="Món thêm" th:checked="${category == 'Món thêm'}" onchange="applySearchFilters()">
+                            <span style="font-weight: 500;">Món thêm / Chả đậu</span>
+                        </label>
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 0.6rem; font-size: 0.95rem; padding: 0.4rem; border-radius: 4px; transition: var(--transition);">
+                            <input type="radio" name="filterCategory" value="Nước uống" th:checked="${category == 'Nước uống'}" onchange="applySearchFilters()">
+                            <span style="font-weight: 500;">Nước giải khát</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3. Price range -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-dark); font-size: 0.95rem;">
+                        <i class="fa-solid fa-tags" style="color: var(--primary);"></i> Khoảng giá:
+                    </label>
+                    <select id="filterPrice" onchange="applySearchFilters()" style="width: 100%; padding: 0.75rem; border: 1px solid #DDD; border-radius: var(--radius-sm); font-size: 0.95rem; outline: none; background: white; color: var(--text-dark);">
+                        <option value="0" th:selected="${maxPrice == 0}">Tất cả mức giá</option>
+                        <option value="35000" th:selected="${maxPrice == 35000}">Dưới 35,000 đ (Món nhẹ / Nước)</option>
+                        <option value="55000" th:selected="${maxPrice == 55000}">Từ 35,000 đ - 55,000 đ (Tiêu chuẩn)</option>
+                        <option value="999999" th:selected="${maxPrice == 999999}">Trên 55,000 đ (Tô đặc biệt / Combo)</option>
+                    </select>
+                </div>
+
+                <!-- 4. Sort order -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-dark); font-size: 0.95rem;">
+                        <i class="fa-solid fa-arrow-down-up-across-line" style="color: var(--primary);"></i> Sắp xếp ưu tiên:
+                    </label>
+                    <select id="filterSort" onchange="applySearchFilters()" style="width: 100%; padding: 0.75rem; border: 1px solid #DDD; border-radius: var(--radius-sm); font-size: 0.95rem; outline: none; background: white; color: var(--text-dark);">
+                        <option value="default" th:selected="${sort == 'default'}">Nổi bật mặc định</option>
+                        <option value="price-asc" th:selected="${sort == 'price-asc'}">Giá tăng dần (Thấp -> Cao)</option>
+                        <option value="price-desc" th:selected="${sort == 'price-desc'}">Giá giảm dần (Cao -> Thấp)</option>
+                        <option value="name-asc" th:selected="${sort == 'name-asc'}">Tên món (A -> Z)</option>
+                    </select>
+                </div>
+
+                <button onclick="applySearchFilters()" class="btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem; font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);">
+                    <i class="fa-solid fa-filter"></i> Lọc Món Ngay
+                </button>
+            </div>
+
+            <!-- Right Panel: Results Display Grid -->
+            <div>
+                <!-- Result status bar -->
+                <div style="background: white; padding: 1rem 1.5rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-left: 4px solid var(--secondary);">
+                    <div style="font-size: 1.05rem; color: var(--text-dark);">
+                        Kết quả tìm kiếm: <strong id="resultCountBadge" style="color: var(--primary); font-size: 1.25rem;">0</strong> món ăn phù hợp
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-light);">
+                        <i class="fa-regular fa-clock"></i> Cập nhật tức thì
+                    </div>
+                </div>
+
+                <!-- Empty State Notice -->
+                <div id="searchEmptyState" style="display: none; text-align: center; background: white; padding: 4rem 2rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+                    <i class="fa-solid fa-utensils" style="font-size: 4rem; color: #DDD; margin-bottom: 1.5rem;"></i>
+                    <h3 style="margin: 0 0 0.5rem 0; color: var(--text-dark); font-size: 1.5rem;">Không tìm thấy món ăn nào phù hợp!</h3>
+                    <p style="color: var(--text-light); margin-bottom: 1.5rem; max-width: 450px; margin-left: auto; margin-right: auto;">
+                        Vui lòng thử điều chỉnh từ khóa tìm kiếm, thay đổi danh mục hoặc mở rộng khoảng giá lọc của bạn.
+                    </p>
+                    <button onclick="resetSearchFilters()" class="btn-primary" style="display: inline-flex;">
+                        <i class="fa-solid fa-rotate-left"></i> Xem lại tất cả món ăn
+                    </button>
+                </div>
+
+                <!-- Dishes Grid -->
+                <div id="searchResultsGrid" class="dishes-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem;">
+                    <div class="dish-card search-dish-card" th:each="dish : ${dishes}" 
+                         th:attr="data-id=${dish.id}, data-name=${dish.name}, data-price=${dish.price}, data-category=${dish.category}" style="position: relative;">
+                        <button type="button" th:attr="onclick=|toggleFavoriteDish(${dish.id}, this)|" style="position: absolute; top: 10px; left: 10px; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.95); border: none; box-shadow: 0 3px 8px rgba(0,0,0,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #E74C3C; font-size: 1.1rem; transition: 0.2s;" title="Yêu thích món này" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                            <i th:class="${currentUser != null && currentUser.favoriteDishes.contains(dish) ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
+                        </button>
+                        <div class="dish-img-wrapper">
+                            <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" th:src="${dish.imageUrl}" th:alt="${dish.name}" class="dish-img">
+                            <img th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" src="https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop" th:alt="${dish.name}" class="dish-img">
+                            <span class="dish-category-badge" th:text="${dish.category}">Bún Bò</span>
+                        </div>
+                        <div class="dish-info" style="display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
+                            <div>
+                                <h3 class="dish-name" th:text="${dish.name}">Bún Bò Đặc Biệt</h3>
+                                <p class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">65,000 đ</p>
+                            </div>
+                            <button class="btn-primary" style="justify-content: center; width: 100%; margin-top: 1rem;" 
+                                    th:attr="onclick=|addToCart(${dish.id}, '${dish.name}', ${dish.price})|">
+                                <i class="fa-solid fa-cart-plus"></i> Chọn món
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CART SIDEBAR SLIDEOUT -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3><i class="fa-solid fa-shopping-basket" style="color: var(--primary);"></i> Đơn đặt món</h3>
+            <button class="qty-btn" aria-label="Đóng giỏ hàng" onclick="toggleCartSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div id="cart-items-container" class="cart-items-list">
+            <p style="text-align: center; color: var(--text-light); margin-top: 2rem;">Giỏ hàng của bạn đang trống.</p>
+        </div>
+
+        <form action="/order/place" method="post" onsubmit="return validateCheckoutForm()">
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.25rem;"><i class="fa-solid fa-chair" style="color: var(--secondary);"></i> Chọn số Bàn của bạn:</label>
+                <select name="tableId" id="checkout-table" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    <option value="">-- Chọn số bàn --</option>
+                    <option th:each="tbl : ${tables}" th:value="${tbl.id}" th:text="${tbl.tableNumber}">Bàn 1</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.25rem;"><i class="fa-solid fa-user"></i> Tên người đặt món:</label>
+                <input type="text" name="customerName" id="checkout-name" required placeholder="Nhập tên của bạn..." 
+                       style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; font-weight:600; margin-bottom:0.25rem;"><i class="fa-solid fa-wallet"></i> Phương thức thanh toán:</label>
+                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                        <input type="radio" name="paymentMethod" value="CASH" checked> Tiền mặt tại quầy
+                    </label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 0.25rem;">
+                        <input type="radio" name="paymentMethod" value="VIETQR"> Chuyển khoản VietQR
+                    </label>
+                </div>
+            </div>
+
+            <div class="cart-total-section">
+                <div class="cart-total-row">
+                    <span>Tổng cộng:</span>
+                    <span id="cart-total-price">0 đ</span>
+                </div>
+            </div>
+
+            <input type="hidden" name="cartJson" id="cart-json-input">
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+                <i class="fa-solid fa-paper-plane"></i> Gửi Yêu Cầu Gọi Món
+            </button>
+        </form>
+    </div>
+
+    <!-- Javascript Logic for Interactive Search & Filter and Cart -->
+    <script th:inline="javascript">
+        let cart = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load Cart
+            const savedCart = localStorage.getItem('bunbo_cart');
+            if (savedCart) {
+                try {
+                    cart = JSON.parse(savedCart);
+                    updateCartUI();
+                } catch (e) {
+                    console.error("Lỗi đọc giỏ hàng local storage", e);
+                }
+            }
+
+            // Apply initial filters on load
+            applySearchFilters();
+        });
+
+        function applySearchFilters() {
+            const keyword = document.getElementById('filterKeyword').value.trim().toLowerCase();
+            const categoryRadio = document.querySelector('input[name="filterCategory"]:checked');
+            const category = categoryRadio ? categoryRadio.value : 'All';
+            const priceFilter = parseInt(document.getElementById('filterPrice').value || 0);
+            const sortType = document.getElementById('filterSort').value;
+
+            const grid = document.getElementById('searchResultsGrid');
+            const cards = Array.from(grid.querySelectorAll('.search-dish-card'));
+
+            let matchedCount = 0;
+
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                const price = parseFloat(card.getAttribute('data-price'));
+                const cat = card.getAttribute('data-category');
+
+                // Check keyword
+                const matchKeyword = keyword === '' || name.includes(keyword);
+
+                // Check category
+                const matchCat = category === 'All' || cat === category;
+
+                // Check price
+                let matchPrice = true;
+                if (priceFilter === 35000) {
+                    matchPrice = price < 35000;
+                } else if (priceFilter === 55000) {
+                    matchPrice = price >= 35000 && price <= 55000;
+                } else if (priceFilter === 999999) {
+                    matchPrice = price > 55000;
+                }
+
+                if (matchKeyword && matchCat && matchPrice) {
+                    card.style.display = 'flex';
+                    card.setAttribute('data-visible', 'true');
+                    matchedCount++;
+                } else {
+                    card.style.display = 'none';
+                    card.setAttribute('data-visible', 'false');
+                }
+            });
+
+            // Update badge
+            document.getElementById('resultCountBadge').innerText = matchedCount;
+
+            // Show empty state if count == 0
+            const emptyState = document.getElementById('searchEmptyState');
+            if (matchedCount === 0) {
+                emptyState.style.display = 'block';
+                grid.style.display = 'none';
+            } else {
+                emptyState.style.display = 'none';
+                grid.style.display = 'grid';
+            }
+
+            // Sorting
+            const visibleCards = cards.filter(c => c.getAttribute('data-visible') === 'true');
+            if (sortType === 'price-asc') {
+                visibleCards.sort((a, b) => parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price')));
+            } else if (sortType === 'price-desc') {
+                visibleCards.sort((a, b) => parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price')));
+            } else if (sortType === 'name-asc') {
+                visibleCards.sort((a, b) => a.getAttribute('data-name').localeCompare(b.getAttribute('data-name')));
+            }
+
+            // Re-append sorted cards
+            visibleCards.forEach(c => grid.appendChild(c));
+        }
+
+        function resetSearchFilters() {
+            document.getElementById('filterKeyword').value = '';
+            const allRadio = document.querySelector('input[name="filterCategory"][value="All"]');
+            if (allRadio) allRadio.checked = true;
+            document.getElementById('filterPrice').value = '0';
+            document.getElementById('filterSort').value = 'default';
+            applySearchFilters();
+        }
+
+        // Cart Functions
+        function toggleCartSidebar() {
+            document.getElementById('cart-sidebar').classList.toggle('open');
+        }
+
+        function addToCart(id, name, price) {
+            const existingItem = cart.find(item => item.dishId === id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ dishId: id, name: name, price: price, quantity: 1 });
+            }
+            updateCartUI();
+            
+            const sidebar = document.getElementById('cart-sidebar');
+            if (!sidebar.classList.contains('open')) {
+                sidebar.classList.add('open');
+            }
+        }
+
+        function changeQuantity(id, delta) {
+            const item = cart.find(item => item.dishId === id);
+            if (item) {
+                item.quantity += delta;
+                if (item.quantity <= 0) {
+                    cart = cart.filter(i => i.dishId !== id);
+                }
+                updateCartUI();
+            }
+        }
+
+        function updateCartUI() {
+            localStorage.setItem('bunbo_cart', JSON.stringify(cart));
+
+            const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const badge = document.getElementById('cart-badge-count');
+            if (totalQty > 0) {
+                badge.innerText = totalQty;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            const container = document.getElementById('cart-items-container');
+            if (cart.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-light); margin-top: 2rem;">Giỏ hàng của bạn đang trống.</p>';
+                document.getElementById('cart-total-price').innerText = '0 đ';
+                return;
+            }
+
+            let html = '';
+            let totalAmount = 0;
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                totalAmount += itemTotal;
+                html += `
+                    <div class="cart-item">
+                        <div class="cart-item-details">
+                            <h4>${item.name}</h4>
+                            <div class="cart-item-qty">
+                                <button type="button" class="qty-btn" aria-label="Giảm số lượng" onclick="changeQuantity(${item.dishId}, -1)">-</button>
+                                <span>${item.quantity}</span>
+                                <button type="button" class="qty-btn" aria-label="Tăng số lượng" onclick="changeQuantity(${item.dishId}, 1)">+</button>
+                            </div>
+                        </div>
+                        <span style="font-weight: 600; color: var(--primary);">${itemTotal.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('cart-total-price').innerText = totalAmount.toLocaleString('vi-VN') + ' đ';
+            document.getElementById('cart-json-input').value = JSON.stringify(cart);
+        }
+
+        function validateCheckoutForm() {
+            const table = document.getElementById('checkout-table').value;
+            if (!table) {
+                alert('Vui lòng chọn số bàn của bạn trước khi gửi đặt món!');
+                return false;
+            }
+            if (cart.length === 0) {
+                alert('Giỏ hàng trống! Hãy chọn ít nhất một món ăn.');
+                return false;
+            }
+            localStorage.removeItem('bunbo_cart');
+            return true;
+        }
+
+        function toggleFavoriteDish(dishId, btnEl) {
+            fetch('/api/favorites/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'dishId=' + dishId
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const icon = btnEl.querySelector('i');
+                    if (data.isFavorite) {
+                        icon.className = 'fa-solid fa-heart';
+                        alert('Đã lưu món ăn vào danh sách yêu thích!');
+                    } else {
+                        icon.className = 'fa-regular fa-heart';
+                        alert('Đã bỏ lưu món ăn yêu thích.');
+                    }
+                } else if (data.status === 'unauthenticated') {
+                    if (confirm('Bạn cần đăng nhập để lưu món yêu thích! Đến trang đăng nhập ngay?')) {
+                        window.location.href = '/login';
+                    }
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra.');
+                }
+            })
+            .catch(err => console.error(err));
+        }
+    </script>
+
+    <!-- Rich Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+
+    <!-- Floating Action Buttons & AI Chatbot -->
+    <div th:replace="~{fragments/layout :: floating_contact}"></div>
+</body>
+</html>

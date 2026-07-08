@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bếp - Quản lý Bún Bò</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -66,31 +67,36 @@
     </style>
 </head>
 <body>
-    <div th:replace="fragments/layout :: header"></div>
+    <div class="admin-layout">
+        <aside th:replace="fragments/layout :: admin_sidebar('kitchen')"></aside>
 
-    <main class="container">
-        <h2><i class="fas fa-fire"></i> Màn Hình Bếp - Món Đang Chờ</h2>
+        <main class="admin-content">
+            <div th:replace="fragments/layout :: admin_topbar('Khu Vực Bếp Chế Biến', 'Tìm kiếm tên món đang chờ, số bàn, thời gian...')"></div>
 
-        <div class="kanban-board">
-            <div th:if="${#lists.isEmpty(pendingItems)}" class="empty-state">
-                <i class="fas fa-check-circle" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
-                <h3>Hiện tại không có món nào cần làm!</h3>
-            </div>
-
-            <div th:each="item : ${pendingItems}" class="order-card">
-                <div class="order-header">
-                    <span class="order-table" th:text="${item.order.table != null ? item.order.table.tableNumber : 'Khách mang về'}">Bàn 1</span>
-                    <span style="color: #666; font-size: 0.9em;" th:text="${#temporals.format(item.order.createdAt, 'HH:mm')}">12:30</span>
+            <div class="kanban-board" style="margin-top: 1.5rem; display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:1.25rem;">
+                <div th:if="${#lists.isEmpty(pendingItems)}" class="empty-state" style="grid-column: 1 / -1; background:white; padding:3rem; border-radius:var(--radius-md); box-shadow:var(--shadow-sm);">
+                    <i class="fas fa-check-circle" style="font-size: 3.5rem; color: var(--success); margin-bottom: 1rem;"></i>
+                    <h3 style="margin:0; color:var(--text-dark);">Hiện tại không có món nào cần làm!</h3>
+                    <p style="color:var(--text-light); margin-top:0.5rem;">Bếp đang rảnh rỗi, sẵn sàng đón đơn mới.</p>
                 </div>
-                <div class="dish-details">
-                    <div class="dish-name" th:text="${item.dish.name}">Bún Bò Đặc Biệt</div>
-                    <div class="dish-qty">Số lượng: <strong th:text="${item.quantity}">1</strong></div>
+
+                <div th:each="item : ${pendingItems}" class="order-card" style="background:white; border-radius:var(--radius-md); padding:1.25rem; box-shadow:var(--shadow-sm); border-left: 5px solid var(--primary); display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                        <div class="order-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EEE; padding-bottom:0.75rem; margin-bottom:0.75rem;">
+                            <span class="order-table" th:text="${item.order.table != null ? item.order.table.tableNumber : 'Khách mang về'}" style="font-weight:700; color:var(--primary); font-size:1.15rem;">Bàn 1</span>
+                            <span style="color: #666; font-size: 0.9em; background:var(--bg-light); padding:0.2rem 0.6rem; border-radius:4px;"><i class="fa-regular fa-clock"></i> <span th:text="${#temporals.format(item.order.createdAt, 'HH:mm')}">12:30</span></span>
+                        </div>
+                        <div class="dish-details" style="margin-bottom:1.25rem;">
+                            <div class="dish-name" th:text="${item.dish.name}" style="font-size:1.25rem; font-weight:700; color:var(--text-dark); margin-bottom:0.4rem;">Bún Bò Đặc Biệt</div>
+                            <div class="dish-qty" style="font-size:1.05rem; color:var(--text-dark);">Số lượng: <strong th:text="${item.quantity}" style="color:var(--secondary); font-size:1.3rem;">1</strong> tô</div>
+                        </div>
+                    </div>
+                    <form th:action="@{/kitchen/ready/{id}(id=${item.id})}" method="post" style="margin:0;">
+                        <button type="submit" class="btn-ready" style="width:100%; background:linear-gradient(135deg, #27ae60, #1e8449); color:white; border:none; padding:0.75rem; border-radius:var(--radius-sm); font-weight:600; cursor:pointer; font-size:1.05rem; box-shadow:0 3px 8px rgba(39,174,96,0.3); display:flex; align-items:center; justify-content:center; gap:8px;"><i class="fas fa-check"></i> Đã Nấu Xong</button>
+                    </form>
                 </div>
-                <form th:action="@{/kitchen/ready/{id}(id=${item.id})}" method="post">
-                    <button type="submit" class="btn-ready"><i class="fas fa-check"></i> Đã Nấu Xong</button>
-                </form>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
 </body>
 </html>
