@@ -10,3 +10,8 @@ spring:
   web:
     resources:
       static-locations: classpath:/static/,file:uploads/
+
+server:
+  servlet:
+    session:
+      timeout: ${SESSION_TIMEOUT:30m}

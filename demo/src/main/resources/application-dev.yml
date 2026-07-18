@@ -21,4 +21,5 @@ spring:
       enabled: true
       path: /h2-console
       settings:
-        web-allow-others: true
+        # The development console must not be reachable from another host.
+        web-allow-others: false
