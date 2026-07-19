@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.dto.request.PayOrderRequest;
+import com.example.demo.dto.request.RefundOrderRequest;
 import com.example.demo.dto.response.PaymentResult;
 import com.example.demo.exception.OrderAlreadyPaidException;
 import com.example.demo.model.Branch;
@@ -64,6 +65,33 @@ class PaymentServiceTests {
 
         assertThrows(OrderAlreadyPaidException.class, () -> paymentService.payOrder(new PayOrderRequest(7L, PaymentMethod.CASH, new BigDecimal("100000"), null, null)));
         verifyNoInteractions(paymentTransactionRepository);
+    }
+
+    @Test
+    void paidOrderCanBeRefundedOnce() {
+        Order order = order(100_000); order.setPaymentStatus(PaymentStatus.PAID);
+        User cashier = new User(); cashier.setId(9L);
+        when(branchAccessService.requireScopedBranchId()).thenReturn(1L);
+        when(orderRepository.findByIdAndBranchId(7L, 1L)).thenReturn(Optional.of(order));
+        when(paymentTransactionRepository.sumAmountByOrderIdAndBranchIdAndTypeAndStatus(anyLong(), anyLong(), any(), any()))
+                .thenReturn(new BigDecimal("100000"), BigDecimal.ZERO);
+        when(currentUserService.getCurrentUser()).thenReturn(cashier);
+        when(paymentTransactionRepository.save(any(PaymentTransaction.class))).thenAnswer(i -> { PaymentTransaction tx = i.getArgument(0); tx.setId(12L); return tx; });
+
+        PaymentResult result = paymentService.refundOrder(new RefundOrderRequest(7L, "Customer request"));
+
+        assertEquals(new BigDecimal("100000"), result.amount());
+        assertEquals(PaymentStatus.REFUNDED, order.getPaymentStatus());
+    }
+
+    @Test
+    void unpaidOrderCannotBeRefunded() {
+        Order order = order(100_000);
+        when(branchAccessService.requireScopedBranchId()).thenReturn(1L);
+        when(orderRepository.findByIdAndBranchId(7L, 1L)).thenReturn(Optional.of(order));
+
+        assertThrows(com.example.demo.exception.RefundNotAllowedException.class,
+                () -> paymentService.refundOrder(new RefundOrderRequest(7L, "Customer request")));
     }
 
     private Order order(long total) {
