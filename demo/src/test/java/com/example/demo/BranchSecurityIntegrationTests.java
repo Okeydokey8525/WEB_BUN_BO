@@ -5,7 +5,7 @@ import com.example.demo.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -71,11 +71,11 @@ class BranchSecurityIntegrationTests {
         Role inventory = role("ROLE_INVENTORY");
         Role kitchen = role("ROLE_KITCHEN");
         Role cashier = role("ROLE_CASHIER");
-        userRepository.save(user("admin-a", admin, branchA));
-        userRepository.save(user("admin-b", admin, branchB));
-        userRepository.save(user("inventory-a", inventory, branchA));
-        userRepository.save(user("kitchen-a", kitchen, branchA));
-        userRepository.save(user("cashier-a", cashier, branchA));
+        userRepository.save(persistUser("admin-a", admin, branchA));
+        userRepository.save(persistUser("admin-b", admin, branchB));
+        userRepository.save(persistUser("inventory-a", inventory, branchA));
+        userRepository.save(persistUser("kitchen-a", kitchen, branchA));
+        userRepository.save(persistUser("cashier-a", cashier, branchA));
 
         dishA = dishRepository.save(dish("Dish A", branchA));
         dishB = dishRepository.save(dish("Dish B", branchB));
@@ -187,7 +187,7 @@ class BranchSecurityIntegrationTests {
 
         mockMvc.perform(get("/admin/dashboard"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("http://localhost/login"));
+                .andExpect(redirectedUrl("/login"));
     }
 
     @Test
@@ -297,7 +297,7 @@ class BranchSecurityIntegrationTests {
         return roleRepository.findByName(name).orElseGet(() -> roleRepository.save(new Role(null, name)));
     }
 
-    private User user(String username, Role role, Branch branch) {
+    private User persistUser(String username, Role role, Branch branch) {
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode("password"));
