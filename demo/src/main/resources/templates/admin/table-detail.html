@@ -65,9 +65,9 @@
                 <div>
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <h1 style="margin: 0; font-size: 2rem; color: var(--text-dark);" th:text="${table.tableNumber}">Bàn 1</h1>
-                        <span th:class="${table.status == 'FREE' ? 'status-badge status-PENDING' : 'status-badge status-COMPLETED'}"
-                              th:style="${table.status == 'FREE' ? 'background:#E8F8F5; color:#27AE60; font-size:0.95rem; padding:0.4rem 1rem;' : 'background:#FDEDEC; color:#C0392B; font-size:0.95rem; padding:0.4rem 1rem;'}"
-                              th:text="${table.status == 'FREE' ? '🟢 Bàn Trống (Không có khách)' : (table.status == 'OCCUPIED' ? '🔴 Có Khách / Đang Phục Vụ' : '🟡 Đang Gọi Món')}">Trống</span>
+                        <span th:class="${table.status.name() == 'FREE' ? 'status-badge status-PENDING' : 'status-badge status-COMPLETED'}"
+                              th:style="${table.status.name() == 'FREE' ? 'background:#E8F8F5; color:#27AE60; font-size:0.95rem; padding:0.4rem 1rem;' : 'background:#FDEDEC; color:#C0392B; font-size:0.95rem; padding:0.4rem 1rem;'}"
+                              th:text="${table.status.name() == 'FREE' ? '🟢 Bàn Trống (Không có khách)' : (table.status.name() == 'OCCUPIED' ? '🔴 Có Khách / Đang Phục Vụ' : '🟡 Đang Gọi Món')}">Trống</span>
                     </div>
                     <p style="margin: 0.5rem 0 0 0; color: var(--text-light); font-size: 0.95rem;">
                         <i class="fa-solid fa-receipt"></i> Theo dõi chi tiết các món ăn đã gọi, trạng thái bếp chế biến và thanh toán hóa đơn.
@@ -111,7 +111,7 @@
                             <div style="font-size: 0.85rem; color: var(--text-light);">Thời gian đặt: <strong th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2026 12:00</strong></div>
                             <div style="margin-top: 0.4rem;">
                                 <span class="status-badge" th:classappend="'status-' + ${order.status}" 
-                                      th:text="${order.status == 'PENDING' ? '⏳ Chờ xác nhận' : (order.status == 'COOKING' ? '🔥 Đang chế biến' : (order.status == 'SERVED' ? '🍽️ Đã lên món' : '✅ Hoàn tất'))}">Đang chế biến</span>
+                                      th:text="${order.status.name() == 'PENDING' ? '⏳ Chờ xác nhận' : (order.status.name() == 'COOKING' ? '🔥 Đang chế biến' : (order.status.name() == 'SERVED' ? '🍽️ Đã lên món' : '✅ Hoàn tất'))}">Đang chế biến</span>
                                 <span style="display:inline-block; margin-left:8px; padding:0.25rem 0.6rem; background:var(--bg-cream); border-radius:4px; font-size:0.8rem; font-weight:700; color:var(--text-dark);">
                                     <i class="fa-solid fa-credit-card"></i> <span th:text="${order.paymentMethod}">CASH</span>
                                 </span>
@@ -149,7 +149,7 @@
                                 <td style="text-align: center;">
                                     <span style="display:inline-block; padding: 0.3rem 0.8rem; background: var(--bg-cream); border-radius: 6px; font-weight: 700; font-size: 1.05rem;" th:text="'x' + ${item.quantity}">x2</span>
                                 </td>
-                                <td style="text-align: right; font-weight: 700; color: var(--primary); font-size: 1.1rem;" th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'">100,000 đ</td>
+                                <td style="text-align: right; font-weight: 700; color: var(--primary); font-size: 1.1rem;" th:text="${#numbers.formatDecimal(item.lineTotal, 0, 'COMMA', 0, 'POINT')} + ' đ'">100,000 đ</td>
                                 <td>
                                     <span th:if="${item.note != null && !item.note.isEmpty()}" style="color: var(--secondary); font-style: italic; background: #FEF9E7; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;" th:text="'💡 ' + ${item.note}">Không hành</span>
                                     <span th:unless="${item.note != null && !item.note.isEmpty()}" style="color: var(--text-light); font-size: 0.85rem;">Không có</span>
@@ -175,11 +175,11 @@
                             <span style="font-weight: 600; color: var(--text-dark);"><i class="fa-solid fa-arrows-rotate"></i> Cập nhật bếp / lên món:</span>
                             <form th:action="@{/admin/order/{id}/update-status(id=${order.id})}" method="post" style="margin: 0; display: flex; gap: 8px;">
                                 <select name="status" style="padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-weight: 600;">
-                                    <option value="PENDING" th:selected="${order.status == 'PENDING'}">⏳ Chờ xác nhận</option>
-                                    <option value="COOKING" th:selected="${order.status == 'COOKING'}">🔥 Đang chế biến</option>
-                                    <option value="SERVED" th:selected="${order.status == 'SERVED'}">🍽️ Đã lên món</option>
-                                    <option value="COMPLETED" th:selected="${order.status == 'COMPLETED'}">✅ Hoàn tất đơn</option>
-                                    <option value="CANCELLED" th:selected="${order.status == 'CANCELLED'}">❌ Hủy đơn</option>
+                                    <option value="PENDING" th:selected="${order.status.name() == 'PENDING'}">⏳ Chờ xác nhận</option>
+                                    <option value="COOKING" th:selected="${order.status.name() == 'COOKING'}">🔥 Đang chế biến</option>
+                                    <option value="SERVED" th:selected="${order.status.name() == 'SERVED'}">🍽️ Đã lên món</option>
+                                    <option value="COMPLETED" th:selected="${order.status.name() == 'COMPLETED'}">✅ Hoàn tất đơn</option>
+                                    <option value="CANCELLED" th:selected="${order.status.name() == 'CANCELLED'}">❌ Hủy đơn</option>
                                 </select>
                                 <button type="submit" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Cập nhật</button>
                             </form>
@@ -189,12 +189,12 @@
                             <a th:href="@{/menu(tableId=${table.id})}" target="_blank" class="btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px; border-color:var(--secondary); color:var(--secondary); font-weight:600;">
                                 <i class="fa-solid fa-plus"></i> Gọi thêm món
                             </a>
-                            <form th:if="${order.paymentStatus == 'UNPAID'}" th:action="@{/admin/order/{id}/mark-paid(id=${order.id})}" method="post" style="margin:0;">
+                            <form th:if="${order.paymentStatus.name() == 'UNPAID'}" th:action="@{/admin/order/{id}/mark-paid(id=${order.id})}" method="post" style="margin:0;">
                                 <button type="submit" class="btn-primary" style="display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #27ae60, #1e8449); box-shadow: 0 4px 10px rgba(39,174,96,0.3); border:none; cursor:pointer;">
                                     <i class="fa-solid fa-check-to-slot"></i> Thu tiền / Đã thanh toán
                                 </button>
                             </form>
-                            <span th:if="${order.paymentStatus == 'PAID'}" style="padding:0.6rem 1rem; background:#E8F8F5; color:#27AE60; font-weight:700; border-radius:var(--radius-sm); border:1px solid #27AE60; display:inline-flex; align-items:center; gap:6px;">
+                            <span th:if="${order.paymentStatus.name() == 'PAID'}" style="padding:0.6rem 1rem; background:#E8F8F5; color:#27AE60; font-weight:700; border-radius:var(--radius-sm); border:1px solid #27AE60; display:inline-flex; align-items:center; gap:6px;">
                                 <i class="fa-solid fa-circle-check"></i> Đã thanh toán
                             </span>
                             <a th:href="@{/admin/order/{id}/print(id=${order.id})}" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #f39c12, #d68910); border:none; cursor:pointer; box-shadow: 0 4px 10px rgba(243,156,18,0.3);">

@@ -66,7 +66,7 @@
                         1 x 65,000 đ
                     </span>
                 </div>
-                <span th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="align-self: flex-end; font-weight:bold;">
+                <span th:text="${#numbers.formatDecimal(item.lineTotal, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="align-self: flex-end; font-weight:bold;">
                     65,000 đ
                 </span>
             </div>

@@ -6,6 +6,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.example.demo.model.enums.TableStatus;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -73,13 +75,13 @@ public class DataInitializer {
             Dish bunBoGioHeo = null;
             
             if (dishRepository.count() == 0) {
-                bunBoDacBiet = dishRepository.save(new Dish(null, "Bún Bò Đặc Biệt", 65000.0, "https://images.unsplash.com/photo-1555126634-323283e090fa?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
-                bunBoTaiNam = dishRepository.save(new Dish(null, "Bún Bò Tái Nạm Chả", 55000.0, "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
-                bunBoGioHeo = dishRepository.save(new Dish(null, "Bún Bò Giò Heo", 50000.0, "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Chả Cua Thêm (1 viên)", 12000.0, "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop", "Món thêm", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Thịt Nạm Bò Thêm", 18000.0, "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=600&auto=format&fit=crop", "Món thêm", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Trà Đá", 5000.0, "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop", "Nước uống", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Nước Ngọt (Coca/Pepsi)", 15000.0, "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop", "Nước uống", true, defaultBranch));
+                bunBoDacBiet = dishRepository.save(new Dish(null, "Bún Bò Đặc Biệt", new BigDecimal("65000"), "https://images.unsplash.com/photo-1555126634-323283e090fa?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
+                bunBoTaiNam = dishRepository.save(new Dish(null, "Bún Bò Tái Nạm Chả", new BigDecimal("55000"), "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
+                bunBoGioHeo = dishRepository.save(new Dish(null, "Bún Bò Giò Heo", new BigDecimal("50000"), "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Chả Cua Thêm (1 viên)", new BigDecimal("12000"), "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop", "Món thêm", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Thịt Nạm Bò Thêm", new BigDecimal("18000"), "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=600&auto=format&fit=crop", "Món thêm", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Trà Đá", new BigDecimal("5000"), "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop", "Nước uống", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Nước Ngọt (Coca/Pepsi)", new BigDecimal("15000"), "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop", "Nước uống", true, defaultBranch));
                 System.out.println("--> Seeded Menu Dishes successfully!");
             } else {
                 List<Dish> list = dishRepository.findByBranchId(defaultBranch.getId());
@@ -92,11 +94,11 @@ public class DataInitializer {
 
             // 5. Seed Restaurant Tables if empty
             if (tableRepository.count() == 0) {
-                tableRepository.save(new RestaurantTable(null, "Bàn 1", "FREE", defaultBranch));
-                tableRepository.save(new RestaurantTable(null, "Bàn 2", "FREE", defaultBranch));
-                tableRepository.save(new RestaurantTable(null, "Bàn 3", "FREE", defaultBranch));
-                tableRepository.save(new RestaurantTable(null, "Bàn 4", "FREE", defaultBranch));
-                tableRepository.save(new RestaurantTable(null, "Bàn 5", "FREE", defaultBranch));
+                tableRepository.save(new RestaurantTable(null, "Bàn 1", TableStatus.FREE, null, defaultBranch));
+                tableRepository.save(new RestaurantTable(null, "Bàn 2", TableStatus.FREE, null, defaultBranch));
+                tableRepository.save(new RestaurantTable(null, "Bàn 3", TableStatus.FREE, null, defaultBranch));
+                tableRepository.save(new RestaurantTable(null, "Bàn 4", TableStatus.FREE, null, defaultBranch));
+                tableRepository.save(new RestaurantTable(null, "Bàn 5", TableStatus.FREE, null, defaultBranch));
                 System.out.println("--> Seeded Restaurant Tables successfully!");
             }
 

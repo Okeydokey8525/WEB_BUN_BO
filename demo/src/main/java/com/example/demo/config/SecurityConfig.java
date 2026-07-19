@@ -47,7 +47,6 @@ public class SecurityConfig {
                     "/js/**",
                     "/images/**",
                     "/h2-console/**",
-                    "/api/kitchen/**",
                     "/api/favorites/**"
                 ).permitAll()
                 .requestMatchers("/admin/inventory", "/admin/inventory/**").hasAnyRole("ADMIN", "INVENTORY")
