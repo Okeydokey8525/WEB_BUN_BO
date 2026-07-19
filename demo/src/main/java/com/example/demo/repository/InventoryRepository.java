@@ -18,7 +18,6 @@ public interface InventoryRepository extends JpaRepository<InventoryItem, Long> 
     List<InventoryItem> findByBranchId(Long branchId);
     
     Optional<InventoryItem> findByBranchIdAndIngredientName(Long branchId, String ingredientName);
-    Optional<InventoryItem> findByIdAndBranchId(Long id, Long branchId);
     
     @Query("SELECT i FROM InventoryItem i WHERE i.branch.id = :branchId AND i.quantity < i.minThreshold")
     List<InventoryItem> findLowStockItemsByBranch(@Param("branchId") Long branchId);

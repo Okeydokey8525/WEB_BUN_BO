@@ -17,7 +17,7 @@
         </p>
 
         <!-- Status Badges -->
-        <div class="status-badge" th:classappend="'status-' + ${order.status.name().toLowerCase()}" th:text="${order.status}">
+        <div class="status-badge" th:classappend="'status-' + ${order.status.toLowerCase()}" th:text="${order.status}">
             PENDING
         </div>
 
@@ -25,7 +25,7 @@
         <div style="display:flex; justify-content:space-around; align-items:center; margin: 2rem 0; position:relative; max-width:600px; margin-left:auto; margin-right:auto;">
             <div style="text-align:center; z-index: 2;">
                 <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; margin:0 auto 0.5rem;"
-                     th:styleappend="${order.status.name() == 'PENDING' || order.status.name() == 'COOKING' || order.status.name() == 'SERVED' || order.status.name() == 'COMPLETED'} ? 'background-color: var(--primary); color: white;' : 'background-color: #BDC3C7; color: white;'">
+                     th:styleappend="${order.status == 'PENDING' || order.status == 'COOKING' || order.status == 'SERVED' || order.status == 'COMPLETED'} ? 'background-color: var(--primary); color: white;' : 'background-color: #BDC3C7; color: white;'">
                     <i class="fa-solid fa-spinner"></i>
                 </div>
                 <span style="font-size:0.85rem; font-weight:600;">Chờ nhận</span>
@@ -33,7 +33,7 @@
             
             <div style="text-align:center; z-index: 2;">
                 <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; margin:0 auto 0.5rem;"
-                     th:styleappend="${order.status.name() == 'COOKING' || order.status.name() == 'SERVED' || order.status.name() == 'COMPLETED'} ? 'background-color: var(--primary); color: white;' : 'background-color: #BDC3C7; color: white;'">
+                     th:styleappend="${order.status == 'COOKING' || order.status == 'SERVED' || order.status == 'COMPLETED'} ? 'background-color: var(--primary); color: white;' : 'background-color: #BDC3C7; color: white;'">
                     <i class="fa-solid fa-fire-burner"></i>
                 </div>
                 <span style="font-size:0.85rem; font-weight:600;">Đang nấu</span>
@@ -41,7 +41,7 @@
 
             <div style="text-align:center; z-index: 2;">
                 <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; margin:0 auto 0.5rem;"
-                     th:styleappend="${order.status.name() == 'SERVED' || order.status.name() == 'COMPLETED'} ? 'background-color: var(--primary); color: white;' : 'background-color: #BDC3C7; color: white;'">
+                     th:styleappend="${order.status == 'SERVED' || order.status == 'COMPLETED'} ? 'background-color: var(--primary); color: white;' : 'background-color: #BDC3C7; color: white;'">
                     <i class="fa-solid fa-bell"></i>
                 </div>
                 <span style="font-size:0.85rem; font-weight:600;">Đã lên món</span>
@@ -58,7 +58,7 @@
                     <strong th:text="${item.dish.name}">Bún Bò Đặc Biệt</strong> 
                     <span th:text="'x' + ${item.quantity}" style="color: var(--text-light); font-size: 0.9rem;">x1</span>
                 </span>
-                <span th:text="${#numbers.formatDecimal(item.lineTotal, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-weight: 600;">65,000 đ</span>
+                <span th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'" style="font-weight: 600;">65,000 đ</span>
             </div>
             <div style="display:flex; justify-content:space-between; font-weight:700; font-size:1.15rem; margin-top:1rem; border-top:1px dashed var(--border-color); padding-top:0.75rem; color: var(--primary);">
                 <span>Tổng tiền thanh toán:</span>
@@ -67,8 +67,8 @@
             
             <div style="margin-top: 1rem; font-size: 0.95rem;">
                 <span>Trạng thái thanh toán: </span>
-                <span th:if="${order.paymentStatus.name() == 'PAID'}" class="pulsing-badge" style="background-color: var(--success); font-weight:600;">ĐÃ THANH TOÁN</span>
-                <span th:unless="${order.paymentStatus.name() == 'PAID'}" style="color: var(--danger); font-weight:600;">CHƯA THANH TOÁN</span>
+                <span th:if="${order.paymentStatus == 'PAID'}" class="pulsing-badge" style="background-color: var(--success); font-weight:600;">ĐÃ THANH TOÁN</span>
+                <span th:unless="${order.paymentStatus == 'PAID'}" style="color: var(--danger); font-weight:600;">CHƯA THANH TOÁN</span>
             </div>
         </div>
 

@@ -2,17 +2,12 @@ package com.example.demo.controller;
 
 import com.example.demo.model.*;
 import com.example.demo.repository.*;
-import com.example.demo.model.enums.OrderStatus;
-import com.example.demo.model.enums.PaymentStatus;
-import com.example.demo.model.enums.TableStatus;
-import com.example.demo.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -27,16 +22,17 @@ public class AdminController {
     private final DishRepository dishRepository;
     private final UserRepository userRepository;
     private final BranchRepository branchRepository;
-    private final OrderService orderService;
-    private final DishService dishService;
-    private final RestaurantTableService restaurantTableService;
-    private final InventoryService inventoryService;
 
     private Branch getUserBranch(Authentication authentication) {
         if (authentication == null) return null;
         String username = authentication.getName();
         User user = userRepository.findByUsername(username).orElse(null);
-        if (user == null || user.getBranch() == null) return null;
+        if (user == null) return null;
+        if (user.getBranch() == null) {
+            // Global admin, default to first branch
+            List<Branch> branches = branchRepository.findAll();
+            return branches.isEmpty() ? null : branches.get(0);
+        }
         return user.getBranch();
     }
 
@@ -50,7 +46,7 @@ public class AdminController {
         List<Order> allOrders = orderRepository.findByBranchIdOrderByCreatedAtDesc(branch.getId());
         
         // Calculate statistics for today (simulation uses current local date)
-        BigDecimal todayRevenue = BigDecimal.ZERO;
+        double todayRevenue = 0.0;
         long todayOrderCount = 0;
         long activeOrderCount = 0;
         
@@ -58,17 +54,17 @@ public class AdminController {
             // Check if order was created today
             if (o.getCreatedAt().toLocalDate().equals(LocalDate.now())) {
                 todayOrderCount++;
-                if (o.getStatus() == OrderStatus.COMPLETED || o.getPaymentStatus() == PaymentStatus.PAID) {
-                    todayRevenue = todayRevenue.add(o.getTotalAmount());
+                if ("COMPLETED".equals(o.getStatus()) || "PAID".equals(o.getPaymentStatus())) {
+                    todayRevenue += o.getTotalAmount();
                 }
             }
-            if (o.getStatus() != OrderStatus.COMPLETED && o.getStatus() != OrderStatus.CANCELLED) {
+            if (!"COMPLETED".equals(o.getStatus()) && !"CANCELLED".equals(o.getStatus())) {
                 activeOrderCount++;
             }
         }
 
         // Fetch tables and low-stock alerts
-        List<RestaurantTable> tables = restaurantTableService.listForCurrentBranch();
+        List<RestaurantTable> tables = tableRepository.findByBranchId(branch.getId());
         List<InventoryItem> lowStockItems = inventoryRepository.findLowStockItemsByBranch(branch.getId());
 
         model.addAttribute("orders", allOrders);
@@ -83,21 +79,50 @@ public class AdminController {
     }
 
     @PostMapping("/order/{id}/update-status")
-    public String updateOrderStatus(@PathVariable("id") Long id, @RequestParam("status") OrderStatus status, @RequestHeader(value = "Referer", required = false) String referer) {
-        orderService.updateStatus(id, status);
+    public String updateOrderStatus(@PathVariable("id") Long id, @RequestParam("status") String status, @RequestHeader(value = "Referer", required = false) String referer) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid order ID"));
+        
+        order.setStatus(status);
+        
+        // If order is completed or cancelled, free up the table
+        if ("COMPLETED".equals(status) || "CANCELLED".equals(status)) {
+            RestaurantTable table = order.getTable();
+            if (table != null) {
+                table.setStatus("FREE");
+                tableRepository.save(table);
+            }
+            // Auto mark completed orders as PAID
+            if ("COMPLETED".equals(status)) {
+                order.setPaymentStatus("PAID");
+            }
+        } else if ("COOKING".equals(status) || "SERVED".equals(status)) {
+            RestaurantTable table = order.getTable();
+            if (table != null) {
+                table.setStatus("OCCUPIED");
+                tableRepository.save(table);
+            }
+        }
+        
+        orderRepository.save(order);
         return "redirect:" + (referer != null && !referer.isEmpty() ? referer : "/admin/dashboard");
     }
 
     @PostMapping("/order/{id}/mark-paid")
     public String markOrderAsPaid(@PathVariable("id") Long id, @RequestHeader(value = "Referer", required = false) String referer) {
-        orderService.markPaid(id);
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid order ID"));
+        
+        order.setPaymentStatus("PAID");
+        orderRepository.save(order);
         
         return "redirect:" + (referer != null && !referer.isEmpty() ? referer : "/admin/dashboard");
     }
 
     @GetMapping("/order/{id}/print")
     public String printInvoice(@PathVariable("id") Long id, Model model) {
-        Order order = orderService.requireOrderForCurrentBranch(id);
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid order ID"));
         model.addAttribute("order", order);
         return "admin/print";
     }
@@ -110,8 +135,8 @@ public class AdminController {
             return "redirect:/login";
         }
 
-        List<InventoryItem> items = inventoryService.listForCurrentBranch();
-        List<InventoryItem> lowStockItems = inventoryService.lowStockForCurrentBranch();
+        List<InventoryItem> items = inventoryRepository.findByBranchId(branch.getId());
+        List<InventoryItem> lowStockItems = inventoryRepository.findLowStockItemsByBranch(branch.getId());
         
         model.addAttribute("inventoryItems", items);
         model.addAttribute("lowStockCount", lowStockItems.size());
@@ -124,7 +149,11 @@ public class AdminController {
             @RequestParam("itemId") Long itemId,
             @RequestParam("quantity") Double quantity) {
         
-        inventoryService.updateQuantity(itemId, quantity);
+        InventoryItem item = inventoryRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid inventory item ID"));
+        
+        item.setQuantity(quantity);
+        inventoryRepository.save(item);
         
         return "redirect:/admin/inventory";
     }
@@ -137,14 +166,18 @@ public class AdminController {
             return "redirect:/login";
         }
 
-        model.addAttribute("dishes", dishService.listForCurrentBranch());
+        model.addAttribute("dishes", dishRepository.findByBranchId(branch.getId()));
         model.addAttribute("currentBranch", branch);
         return "admin/menu";
     }
 
     @PostMapping("/menu/toggle/{id}")
     public String toggleDishAvailability(@PathVariable("id") Long id) {
-        dishService.toggleAvailability(id);
+        Dish dish = dishRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid dish ID"));
+        
+        dish.setAvailable(!dish.isAvailable());
+        dishRepository.save(dish);
         
         return "redirect:/admin/menu";
     }
@@ -154,7 +187,7 @@ public class AdminController {
             Authentication authentication,
             @RequestParam(value = "id", required = false) Long id,
             @RequestParam("name") String name,
-            @RequestParam("price") BigDecimal price,
+            @RequestParam("price") Double price,
             @RequestParam("category") String category,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
         
@@ -163,13 +196,31 @@ public class AdminController {
             return "redirect:/login";
         }
 
-        dishService.save(id, name, price, category, imageUrl);
+        Dish dish;
+        if (id != null) {
+            dish = dishRepository.findById(id).orElse(new Dish());
+        } else {
+            dish = new Dish();
+            dish.setBranch(branch);
+        }
+        
+        dish.setName(name);
+        dish.setPrice(price);
+        dish.setCategory(category);
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            dish.setImageUrl(imageUrl);
+        } else if (dish.getImageUrl() == null) {
+            dish.setImageUrl("https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop");
+        }
+        dish.setAvailable(true);
+        
+        dishRepository.save(dish);
         return "redirect:/admin/menu";
     }
 
     @PostMapping("/menu/delete/{id}")
     public String deleteDish(@PathVariable("id") Long id) {
-        dishService.delete(id);
+        dishRepository.deleteById(id);
         return "redirect:/admin/menu";
     }
 
@@ -181,7 +232,7 @@ public class AdminController {
         Branch branch = getUserBranch(authentication);
         if (branch == null) return "redirect:/login";
 
-        List<RestaurantTable> tables = restaurantTableService.listForCurrentBranch();
+        List<RestaurantTable> tables = tableRepository.findByBranchId(branch.getId());
         model.addAttribute("tables", tables);
         model.addAttribute("currentBranch", branch);
         model.addAttribute("activeTab", "tables");
@@ -191,18 +242,27 @@ public class AdminController {
     @PostMapping("/tables/save")
     public String saveTable(@RequestParam(value = "id", required = false) Long id,
                             @RequestParam("tableNumber") String tableNumber,
-                            @RequestParam("status") OrderStatus status,
+                            @RequestParam("status") String status,
                             Authentication authentication) {
         Branch branch = getUserBranch(authentication);
         if (branch == null) return "redirect:/login";
 
-        restaurantTableService.save(id, tableNumber, status);
+        RestaurantTable table;
+        if (id != null && id > 0) {
+            table = tableRepository.findById(id).orElse(new RestaurantTable());
+        } else {
+            table = new RestaurantTable();
+            table.setBranch(branch);
+        }
+        table.setTableNumber(tableNumber);
+        table.setStatus(status);
+        tableRepository.save(table);
         return "redirect:/admin/tables";
     }
 
     @PostMapping("/tables/delete/{id}")
     public String deleteTable(@PathVariable("id") Long id) {
-        restaurantTableService.delete(id);
+        tableRepository.deleteById(id);
         return "redirect:/admin/tables";
     }
 
@@ -211,8 +271,11 @@ public class AdminController {
     // ==========================================
     @GetMapping("/table-detail")
     public String tableDetail(@RequestParam("id") Long id, Model model) {
-        RestaurantTable table = restaurantTableService.requireTableForCurrentBranch(id);
-        List<Order> activeOrders = orderService.activeOrdersForTable(id);
+        RestaurantTable table = tableRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bàn ăn"));
+
+        List<Order> activeOrders = orderRepository.findByTableIdAndStatusNot(id, "COMPLETED");
+        activeOrders.removeIf(o -> "CANCELLED".equals(o.getStatus()));
 
         model.addAttribute("table", table);
         model.addAttribute("activeOrders", activeOrders);
