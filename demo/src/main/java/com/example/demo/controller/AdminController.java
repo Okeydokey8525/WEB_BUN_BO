@@ -191,7 +191,7 @@ public class AdminController {
     @PostMapping("/tables/save")
     public String saveTable(@RequestParam(value = "id", required = false) Long id,
                             @RequestParam("tableNumber") String tableNumber,
-                            @RequestParam("status") OrderStatus status,
+                            @RequestParam("status") TableStatus status,
                             Authentication authentication) {
         Branch branch = getUserBranch(authentication);
         if (branch == null) return "redirect:/login";
