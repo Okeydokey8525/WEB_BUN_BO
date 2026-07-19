@@ -1,6 +1,5 @@
 package com.example.demo.model;
 
-import com.example.demo.model.enums.TableStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,14 +18,10 @@ public class RestaurantTable {
     private Long id;
     
     @Column(nullable = false)
-    private String tableNumber;
+    private String tableNumber; // e.g. "Bàn 1", "Bàn 2"
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
-    private TableStatus status = TableStatus.FREE;
-
-    @Version
-    private Long version;
+    @Column(nullable = false)
+    private String status = "FREE"; // "FREE", "OCCUPIED", "ORDERING"
     
     @ManyToOne
     @JoinColumn(name = "branch_id")

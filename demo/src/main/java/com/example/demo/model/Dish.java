@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Entity
 @Table(name = "dishes")
 @Data
@@ -20,27 +18,19 @@ public class Dish {
     @Column(nullable = false)
     private String name;
     
-    @Column(nullable = false, precision = 19, scale = 0)
-    private BigDecimal price;
+    @Column(nullable = false)
+    private Double price;
     
     @Column(length = 4000)
     private String imageUrl;
     
     @Column(nullable = false)
-    private String category;
+    private String category; // e.g. "Bún Bò", "Nước uống", "Món thêm"
     
     @Column(nullable = false)
     private boolean isAvailable = true;
-
-    @Version
-    private Long version;
     
     @ManyToOne
     @JoinColumn(name = "branch_id")
     private Branch branch;
-
-    public Dish(Long id, String name, BigDecimal price, String imageUrl, String category, boolean isAvailable, Branch branch) {
-        this(id, name, price, imageUrl, category, isAvailable, null, branch);
-    }
-
 }

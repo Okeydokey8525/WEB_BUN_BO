@@ -13,5 +13,4 @@ public interface RestaurantTableRepository extends JpaRepository<RestaurantTable
     // Multi-branch queries
     List<RestaurantTable> findByBranchId(Long branchId);
     Optional<RestaurantTable> findByBranchIdAndTableNumber(Long branchId, String tableNumber);
-    Optional<RestaurantTable> findByIdAndBranchId(Long id, Long branchId);
 }

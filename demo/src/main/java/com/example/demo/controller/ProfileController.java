@@ -102,9 +102,7 @@ public class ProfileController {
             return res;
         }
 
-        Optional<Dish> dishOpt = user.getBranch() == null
-                ? dishRepository.findById(dishId)
-                : dishRepository.findByIdAndBranchId(dishId, user.getBranch().getId());
+        Optional<Dish> dishOpt = dishRepository.findById(dishId);
         if (dishOpt.isEmpty()) {
             res.put("status", "error");
             res.put("message", "Món ăn không tồn tại.");

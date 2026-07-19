@@ -64,11 +64,11 @@
             <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-chair"></i> Sơ đồ bàn ăn</h3>
             <div class="tables-grid">
                 <div class="table-node" th:each="tbl : ${tables}" 
-                     th:classappend="${tbl.status.name() == 'FREE'} ? 'free' : (${tbl.status.name() == 'OCCUPIED'} ? 'occupied' : 'ordering')"
+                     th:classappend="${tbl.status == 'FREE'} ? 'free' : (${tbl.status == 'OCCUPIED'} ? 'occupied' : 'ordering')"
                      th:attr="onclick=|handleTableNodeClick(${tbl.id}, '${tbl.tableNumber}', '${tbl.status}')|">
                     <span th:text="${tbl.tableNumber}" style="font-size: 1.1rem; font-weight: 700;">Bàn 1</span>
                     <div style="font-size:0.75rem; font-weight:normal; margin-top:0.35rem; opacity:0.85;" 
-                         th:text="${tbl.status.name() == 'FREE' ? 'Bàn trống' : (tbl.status.name() == 'OCCUPIED' ? 'Có khách' : 'Đang gọi') }">Bàn trống</div>
+                         th:text="${tbl.status == 'FREE' ? 'Bàn trống' : (tbl.status == 'OCCUPIED' ? 'Có khách' : 'Đang gọi') }">Bàn trống</div>
                 </div>
             </div>
 
@@ -103,10 +103,10 @@
                             <td>
                                 <div>
                                     <span th:text="${ord.paymentMethod}">CASH</span> - 
-                                    <span th:if="${ord.paymentStatus.name() == 'PAID'}" style="color:var(--success); font-weight:700;">Đã trả</span>
-                                    <span th:unless="${ord.paymentStatus.name() == 'PAID'}" style="color:var(--danger); font-weight:700;">Chưa trả</span>
+                                    <span th:if="${ord.paymentStatus == 'PAID'}" style="color:var(--success); font-weight:700;">Đã trả</span>
+                                    <span th:unless="${ord.paymentStatus == 'PAID'}" style="color:var(--danger); font-weight:700;">Chưa trả</span>
                                 </div>
-                                <form th:if="${ord.paymentStatus.name() == 'UNPAID'}" th:action="@{/admin/order/{id}/mark-paid(id=${ord.id})}" method="post" style="margin-top: 0.25rem;">
+                                <form th:if="${ord.paymentStatus == 'UNPAID'}" th:action="@{/admin/order/{id}/mark-paid(id=${ord.id})}" method="post" style="margin-top: 0.25rem;">
                                     <button type="submit" class="btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
                                         <i class="fa-solid fa-check"></i> Đã thu tiền
                                     </button>
@@ -116,11 +116,11 @@
                                 <form th:action="@{/admin/order/{id}/update-status(id=${ord.id})}" method="post">
                                     <select name="status" onchange="this.form.submit()" 
                                             style="padding: 0.3rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight:600; border: 1px solid var(--border-color);">
-                                        <option value="PENDING" th:selected="${ord.status.name() == 'PENDING'}">Chờ xác nhận</option>
-                                        <option value="COOKING" th:selected="${ord.status.name() == 'COOKING'}">Đang chế biến</option>
-                                        <option value="SERVED" th:selected="${ord.status.name() == 'SERVED'}">Đã lên món</option>
-                                        <option value="COMPLETED" th:selected="${ord.status.name() == 'COMPLETED'}">Hoàn tất đơn</option>
-                                        <option value="CANCELLED" th:selected="${ord.status.name() == 'CANCELLED'}">Đã hủy</option>
+                                        <option value="PENDING" th:selected="${ord.status == 'PENDING'}">Chờ xác nhận</option>
+                                        <option value="COOKING" th:selected="${ord.status == 'COOKING'}">Đang chế biến</option>
+                                        <option value="SERVED" th:selected="${ord.status == 'SERVED'}">Đã lên món</option>
+                                        <option value="COMPLETED" th:selected="${ord.status == 'COMPLETED'}">Hoàn tất đơn</option>
+                                        <option value="CANCELLED" th:selected="${ord.status == 'CANCELLED'}">Đã hủy</option>
                                     </select>
                                 </form>
                             </td>

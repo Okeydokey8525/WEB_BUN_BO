@@ -1,8 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.OrderItem;
-import com.example.demo.service.KitchenService;
-import com.example.demo.service.RestaurantTableService;
+import com.example.demo.repository.OrderItemRepository;
+import com.example.demo.repository.RestaurantTableRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,20 +15,24 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WaiterController {
 
-    private final KitchenService kitchenService;
-    private final RestaurantTableService restaurantTableService;
+    private final OrderItemRepository orderItemRepository;
+    private final RestaurantTableRepository tableRepository;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        model.addAttribute("tables", restaurantTableService.listForCurrentBranch());
-        List<OrderItem> readyItems = kitchenService.readyItemsForCurrentBranch();
+        // Show all tables and ready items
+        model.addAttribute("tables", tableRepository.findAll());
+        List<OrderItem> readyItems = orderItemRepository.findByStatus("READY");
         model.addAttribute("readyItems", readyItems);
         return "waiter/dashboard";
     }
 
     @PostMapping("/serve/{id}")
     public String markAsServed(@PathVariable Long id) {
-        kitchenService.markServed(id);
+        orderItemRepository.findById(id).ifPresent(item -> {
+            item.setStatus("SERVED");
+            orderItemRepository.save(item);
+        });
         return "redirect:/waiter/dashboard";
     }
 }
