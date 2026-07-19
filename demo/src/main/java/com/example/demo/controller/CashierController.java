@@ -1,8 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Order;
-import com.example.demo.repository.OrderRepository;
-import com.example.demo.repository.RestaurantTableRepository;
+import com.example.demo.service.OrderService;
+import com.example.demo.service.RestaurantTableService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,15 +15,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CashierController {
 
-    private final OrderRepository orderRepository;
-    private final RestaurantTableRepository tableRepository;
+    private final OrderService orderService;
+    private final RestaurantTableService restaurantTableService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        // Find unpaid orders that are not CANCELLED
-        List<Order> unpaidOrders = orderRepository.findByPaymentStatusAndStatusNot("UNPAID", "CANCELLED");
+        List<Order> unpaidOrders = orderService.unpaidForCurrentBranch();
         model.addAttribute("unpaidOrders", unpaidOrders);
-        model.addAttribute("tables", tableRepository.findAll());
+        model.addAttribute("tables", restaurantTableService.listForCurrentBranch());
         return "cashier/dashboard";
     }
 }

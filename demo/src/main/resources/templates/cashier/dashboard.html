@@ -84,7 +84,7 @@
                     <div class="table-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:12px;">
                         <div th:each="table : ${tables}" class="table-node" th:classappend="'status-' + ${table.status}" th:attr="onclick=|handleTableNodeClick(${table.id}, '${table.tableNumber}', '${table.status}')|">
                             <div style="font-size: 1.1rem; font-weight: 700;" th:text="${table.tableNumber}">Bàn 1</div>
-                            <div style="font-size: 0.75rem; opacity: 0.85; margin-top: 4px;" th:text="${table.status == 'FREE' ? 'Trống' : (table.status == 'OCCUPIED' ? 'Có khách' : 'Đang gọi')}">Trống</div>
+                            <div style="font-size: 0.75rem; opacity: 0.85; margin-top: 4px;" th:text="${table.status.name() == 'FREE' ? 'Trống' : (table.status.name() == 'OCCUPIED' ? 'Có khách' : 'Đang gọi')}">Trống</div>
                         </div>
                     </div>
                 </div>
@@ -108,10 +108,10 @@
                             </div>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
-                            <form th:if="${order.paymentStatus == 'UNPAID'}" th:action="@{/admin/order/{id}/mark-paid(id=${order.id})}" method="post" style="margin:0;">
+                            <form th:if="${order.paymentStatus.name() == 'UNPAID'}" th:action="@{/admin/order/{id}/mark-paid(id=${order.id})}" method="post" style="margin:0;">
                                 <button type="submit" class="btn-pay" style="background:linear-gradient(135deg, #27ae60, #1e8449); color:white; padding:0.6rem 1rem; border-radius:var(--radius-sm); font-weight:600; border:none; cursor:pointer; box-shadow:0 4px 10px rgba(39,174,96,0.25); display:inline-flex; align-items:center; gap:6px; font-size:0.9rem;"><i class="fas fa-check-circle"></i> Đã thu tiền</button>
                             </form>
-                            <span th:if="${order.paymentStatus == 'PAID'}" style="padding:0.5rem 0.8rem; background:#E8F8F5; color:#27AE60; font-weight:700; border-radius:var(--radius-sm); border:1px solid #27AE60; display:inline-flex; align-items:center; gap:6px; font-size:0.85rem;">
+                            <span th:if="${order.paymentStatus.name() == 'PAID'}" style="padding:0.5rem 0.8rem; background:#E8F8F5; color:#27AE60; font-weight:700; border-radius:var(--radius-sm); border:1px solid #27AE60; display:inline-flex; align-items:center; gap:6px; font-size:0.85rem;">
                                 <i class="fa-solid fa-circle-check"></i> Đã thanh toán
                             </span>
                             <a th:href="@{/admin/order/{id}/print(id=${order.id})}" style="background:linear-gradient(135deg, #f39c12, #d68910); color:white; padding:0.6rem 1rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; box-shadow:0 4px 10px rgba(243,156,18,0.25); display:inline-flex; align-items:center; gap:6px; font-size:0.9rem;"><i class="fas fa-print"></i> In Hóa Đơn</a>
