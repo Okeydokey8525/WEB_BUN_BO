@@ -187,7 +187,8 @@
                 </div>
             </div>
 
-            <input type="hidden" name="cartJson" id="cart-json-input">
+            <input type="hidden" name="orderType" value="DINE_IN">
+            <div id="cart-items-hidden-fields"></div>
 
             <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
                 <i class="fa-solid fa-paper-plane"></i> Gửi Yêu Cầu Gọi Món
@@ -366,7 +367,19 @@
 
             container.innerHTML = html;
             document.getElementById('cart-total-price').innerText = totalAmount.toLocaleString('vi-VN') + ' đ';
-            document.getElementById('cart-json-input').value = JSON.stringify(cart);
+            updateHiddenCartFields();
+        }
+
+        function updateHiddenCartFields() {
+            const hiddenFields = document.getElementById('cart-items-hidden-fields');
+            if (!hiddenFields) return;
+            hiddenFields.innerHTML = '';
+            cart.forEach((item, index) => {
+                hiddenFields.insertAdjacentHTML('beforeend', `
+                    <input type="hidden" name="items[${index}].dishId" value="${item.dishId}">
+                    <input type="hidden" name="items[${index}].quantity" value="${item.quantity}">
+                `);
+            });
         }
 
         function validateCheckoutForm() {
