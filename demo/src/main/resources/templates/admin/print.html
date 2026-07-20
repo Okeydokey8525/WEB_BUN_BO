@@ -54,6 +54,18 @@
                 <span>Thanh toán:</span>
                 <span th:text="${order.paymentMethod}">CASH</span>
             </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Trạng thái:</span>
+                <span th:text="${order.paymentStatus}">UNPAID</span>
+            </div>
+            <div th:if="${order.paidAt != null}" style="display:flex; justify-content:space-between;">
+                <span>Đã thu lúc:</span>
+                <span th:text="${#temporals.format(order.paidAt, 'dd/MM/yyyy HH:mm:ss')}">19/06/2026 18:30:15</span>
+            </div>
+            <div th:if="${order.paidBy != null}" style="display:flex; justify-content:space-between;">
+                <span>Thu ngân:</span>
+                <span th:text="${order.paidBy.fullName}">Cashier</span>
+            </div>
         </div>
 
         <!-- Items Table -->

@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Lịch sử giao dịch</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><main class="container" style="max-width:1000px;margin:2rem auto;">
+  <a th:href="@{/cashier/dashboard}">← Quầy thu ngân</a><h1>Lịch sử giao dịch</h1>
+  <table><thead><tr><th>Đơn</th><th>Thời gian</th><th>Loại</th><th>Phương thức</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
+  <tbody><tr th:each="transaction : ${transactions}"><td th:text="${transaction.order.id}"></td><td th:text="${#temporals.format(transaction.createdAt,'dd/MM/yyyy HH:mm')}"></td><td th:text="${transaction.transactionType}"></td><td th:text="${transaction.paymentMethod}"></td><td th:text="${#numbers.formatDecimal(transaction.amount,0,'COMMA',0,'POINT')} + ' đ'"></td><td th:text="${transaction.status}"></td></tr></tbody></table>
+</main></body></html>

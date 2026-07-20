@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Thanh toán đơn hàng</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body>
+<main class="container" style="max-width:900px; margin:2rem auto;">
+  <a th:href="@{/cashier/dashboard}">← Quay lại quầy thu ngân</a>
+  <h1 th:text="'Đơn #' + ${order.id}">Đơn</h1>
+  <p><strong>Khách:</strong> <span th:text="${order.customerName}"></span> · <strong>Tổng tiền:</strong> <span th:text="${#numbers.formatDecimal(order.totalAmount,0,'COMMA',0,'POINT')} + ' đ'"></span></p>
+  <p th:if="${successMessage}" th:text="${successMessage}" style="color:green"></p>
+  <section th:if="${order.paymentStatus.name() == 'UNPAID'}">
+    <h2>Thanh toán</h2>
+    <form th:action="@{/cashier/orders/{id}/pay(id=${order.id})}" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <label>Phương thức <select name="paymentMethod"><option value="CASH">Tiền mặt</option><option value="VIETQR">VietQR</option></select></label>
+      <label>Tiền khách đưa <input name="amountTendered" type="number" min="0" step="1"></label>
+      <label>Mã giao dịch <input name="referenceCode" maxlength="100"></label>
+      <label>Ghi chú <input name="note" maxlength="500"></label>
+      <button type="submit">Xác nhận thanh toán</button>
+    </form>
+  </section>
+  <section th:if="${order.paymentStatus.name() == 'PAID'}">
+    <h2>Hoàn tiền</h2>
+    <form th:action="@{/cashier/orders/{id}/refund(id=${order.id})}" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <label>Lý do <input name="note" maxlength="500" required></label><button type="submit">Hoàn tiền toàn bộ</button>
+    </form>
+  </section>
+  <h2>Lịch sử giao dịch</h2>
+  <table><thead><tr><th>Thời gian</th><th>Loại</th><th>Phương thức</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
+  <tbody><tr th:each="transaction : ${transactions}"><td th:text="${#temporals.format(transaction.createdAt,'dd/MM/yyyy HH:mm')}"></td><td th:text="${transaction.transactionType}"></td><td th:text="${transaction.paymentMethod}"></td><td th:text="${transaction.amount}"></td><td th:text="${transaction.status}"></td></tr></tbody></table>
+</main>
+</body></html>
