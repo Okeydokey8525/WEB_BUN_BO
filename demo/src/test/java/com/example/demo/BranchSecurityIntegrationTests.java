@@ -316,6 +316,14 @@ class BranchSecurityIntegrationTests {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void cashierPaymentRejectsInvalidPaymentMethodEnum() throws Exception {
+        mockMvc.perform(post("/cashier/orders/{id}/pay", orderA.getId())
+                        .with(user("cashier-a").roles("CASHIER")).with(csrf())
+                        .param("paymentMethod", "INVALID_METHOD").param("amountTendered", "10000"))
+                .andExpect(status().isBadRequest());
+    }
+
     private Branch branch(String name) {
         Branch branch = new Branch();
         branch.setName(name);
