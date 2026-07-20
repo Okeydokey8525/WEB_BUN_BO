@@ -76,6 +76,7 @@ class BranchSecurityIntegrationTests {
         userRepository.save(persistUser("inventory-a", inventory, branchA));
         userRepository.save(persistUser("kitchen-a", kitchen, branchA));
         userRepository.save(persistUser("cashier-a", cashier, branchA));
+        userRepository.save(persistUser("cashier-b", cashier, branchB));
 
         dishA = dishRepository.save(dish("Dish A", branchA));
         dishB = dishRepository.save(dish("Dish B", branchB));
@@ -282,6 +283,37 @@ class BranchSecurityIntegrationTests {
         Order completed = orderRepository.findByIdAndBranchId(orderA.getId(), branchA.getId()).orElseThrow();
         assertEquals(OrderStatus.COMPLETED, completed.getStatus());
         assertEquals(PaymentStatus.UNPAID, completed.getPaymentStatus());
+    }
+
+    @Test
+    void cashierPaymentEndpointsEnforceAuthenticationRoleAndCsrf() throws Exception {
+        mockMvc.perform(get("/cashier/dashboard"))
+                .andExpect(status().is3xxRedirection());
+
+        mockMvc.perform(post("/cashier/orders/{id}/pay", orderA.getId())
+                        .with(user("kitchen-a").roles("KITCHEN")).with(csrf())
+                        .param("paymentMethod", "CASH").param("amountTendered", "10000"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/cashier/orders/{id}/pay", orderA.getId())
+                        .with(user("cashier-a").roles("CASHIER"))
+                        .param("paymentMethod", "CASH").param("amountTendered", "10000"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void cashierCanPayOnlyOrdersInOwnBranch() throws Exception {
+        mockMvc.perform(post("/cashier/orders/{id}/pay", orderA.getId())
+                        .with(user("cashier-a").roles("CASHIER")).with(csrf())
+                        .param("paymentMethod", "CASH").param("amountTendered", "10000"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/cashier/orders/" + orderA.getId()));
+        assertEquals(PaymentStatus.PAID, orderRepository.findByIdAndBranchId(orderA.getId(), branchA.getId()).orElseThrow().getPaymentStatus());
+
+        mockMvc.perform(post("/cashier/orders/{id}/pay", orderA.getId())
+                        .with(user("cashier-b").roles("CASHIER")).with(csrf())
+                        .param("paymentMethod", "CASH").param("amountTendered", "10000"))
+                .andExpect(status().isNotFound());
     }
 
     private Branch branch(String name) {
