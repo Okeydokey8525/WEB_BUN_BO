@@ -7,5 +7,5 @@ import java.util.Optional;
 
 @Repository
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
-    Optional<Recipe> findByDishId(Long dishId);
+    Optional<Recipe> findByDishIdAndBranchId(Long dishId, Long branchId);
 }

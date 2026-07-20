@@ -21,14 +21,12 @@ public class InventoryItem {
     @Column(nullable = false)
     private String ingredientName; // e.g. "Thịt nạm bò", "Chả cua", "Bún sợi to", "Nước cốt xương"
     
-    @Column(nullable = false)
     @Column(nullable = false, precision = 19, scale = 3)
     private BigDecimal quantity = BigDecimal.ZERO;
     
     @Column(nullable = false)
     private String unit; // e.g. "kg", "gam", "lít", "cái"
     
-    @Column(nullable = false)
     @Column(nullable = false, precision = 19, scale = 3)
     private BigDecimal minThreshold = BigDecimal.ZERO;
     
