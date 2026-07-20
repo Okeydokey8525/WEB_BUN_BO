@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @Transactional
@@ -110,5 +111,16 @@ public class PaymentService {
         order.setPaymentStatus(PaymentStatus.REFUNDED);
         orderRepository.saveAndFlush(order);
         return new PaymentResult(saved.getId(), order.getId(), paid, BigDecimal.ZERO);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentTransaction> getTransactionsForOrder(Long orderId) {
+        Order order = requireOrderForCurrentBranch(orderId);
+        return paymentTransactionRepository.findByOrderIdAndBranchIdOrderByCreatedAtAsc(order.getId(), order.getBranch().getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentTransaction> getBranchTransactions() {
+        return paymentTransactionRepository.findByBranchIdOrderByCreatedAtDesc(branchAccessService.requireScopedBranchId());
     }
 }
