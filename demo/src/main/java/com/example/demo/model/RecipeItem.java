@@ -28,8 +28,9 @@ public class RecipeItem {
     @Column(nullable = false)
     private BigDecimal amount; // Quantity required for 1 unit of Dish
 
-    @ManyToOne
-    @JoinColumn(name = "inventory_item_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "inventory_item_id", nullable = false)
+    @ToString.Exclude
     private InventoryItem inventoryItem;
     
     @Column(nullable = false)

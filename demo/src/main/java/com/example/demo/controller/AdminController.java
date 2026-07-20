@@ -122,7 +122,7 @@ public class AdminController {
     @PostMapping("/inventory/update")
     public String updateInventory(
             @RequestParam("itemId") Long itemId,
-            @RequestParam("quantity") Double quantity) {
+            @RequestParam("quantity") BigDecimal quantity) {
         
         inventoryService.updateQuantity(itemId, quantity);
         

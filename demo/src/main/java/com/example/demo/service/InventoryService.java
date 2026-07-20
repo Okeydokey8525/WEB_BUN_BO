@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -25,7 +26,7 @@ public class InventoryService {
     }
 
     @Transactional
-    public void updateQuantity(Long itemId, Double quantity) {
+    public void updateQuantity(Long itemId, BigDecimal quantity) {
         InventoryItem item = inventoryRepository.findByIdAndBranchId(itemId, branchAccessService.requireScopedBranchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dữ liệu hoặc bạn không có quyền truy cập."));
         item.setQuantity(quantity);

@@ -105,18 +105,23 @@ public class DataInitializer {
             // 6. Seed Inventory if empty
             if (inventoryRepository.count() == 0) {
                 // High stock
-                inventoryRepository.save(new InventoryItem(null, "Bún sợi to", 35.0, "kg", 15.0, defaultBranch));
-                inventoryRepository.save(new InventoryItem(null, "Rau sống ăn kèm", 12.0, "kg", 5.0, defaultBranch));
+                inventoryRepository.save(new InventoryItem(null, "Bún sợi to", new BigDecimal("35.000"), "kg", new BigDecimal("15.000"), defaultBranch, null));
+                inventoryRepository.save(new InventoryItem(null, "Rau sống ăn kèm", new BigDecimal("12.000"), "kg", new BigDecimal("5.000"), defaultBranch, null));
                 
                 // Low stock (triggers warning)
-                inventoryRepository.save(new InventoryItem(null, "Thịt nạm bò", 3.2, "kg", 8.0, defaultBranch));
-                inventoryRepository.save(new InventoryItem(null, "Chả cua", 45.0, "viên", 100.0, defaultBranch));
-                inventoryRepository.save(new InventoryItem(null, "Nước cốt xương hầm", 8.5, "lít", 20.0, defaultBranch));
+                inventoryRepository.save(new InventoryItem(null, "Thịt nạm bò", new BigDecimal("3.200"), "kg", new BigDecimal("8.000"), defaultBranch, null));
+                inventoryRepository.save(new InventoryItem(null, "Chả cua", new BigDecimal("45.000"), "viên", new BigDecimal("100.000"), defaultBranch, null));
+                inventoryRepository.save(new InventoryItem(null, "Nước cốt xương hầm", new BigDecimal("8.500"), "lít", new BigDecimal("20.000"), defaultBranch, null));
                 System.out.println("--> Seeded Inventory Items successfully!");
             }
 
             // 7. Seed Recipes if empty
             if (recipeRepository.count() == 0 && bunBoDacBiet != null && bunBoTaiNam != null && bunBoGioHeo != null) {
+                InventoryItem beef = inventoryRepository.findByBranchIdAndIngredientName(defaultBranch.getId(), "Thịt nạm bò").orElseThrow();
+                InventoryItem crabCake = inventoryRepository.findByBranchIdAndIngredientName(defaultBranch.getId(), "Chả cua").orElseThrow();
+                InventoryItem noodles = inventoryRepository.findByBranchIdAndIngredientName(defaultBranch.getId(), "Bún sợi to").orElseThrow();
+                InventoryItem broth = inventoryRepository.findByBranchIdAndIngredientName(defaultBranch.getId(), "Nước cốt xương hầm").orElseThrow();
+                /*
                 // Recipe for Bún Bò Đặc Biệt
                 Recipe rDacBiet = new Recipe(null, bunBoDacBiet, defaultBranch, null);
                 rDacBiet.setRecipeItems(Arrays.asList(
@@ -145,6 +150,32 @@ public class DataInitializer {
                 ));
                 recipeRepository.save(rGioHeo);
 
+                System.out.println("--> Seeded Recipes successfully!");
+                */
+                Recipe rDacBiet = new Recipe(null, bunBoDacBiet, defaultBranch, null);
+                rDacBiet.setRecipeItems(Arrays.asList(
+                    new RecipeItem(null, rDacBiet, beef.getIngredientName(), new BigDecimal("0.150"), beef, beef.getUnit()),
+                    new RecipeItem(null, rDacBiet, crabCake.getIngredientName(), new BigDecimal("1.000"), crabCake, crabCake.getUnit()),
+                    new RecipeItem(null, rDacBiet, noodles.getIngredientName(), new BigDecimal("0.150"), noodles, noodles.getUnit()),
+                    new RecipeItem(null, rDacBiet, broth.getIngredientName(), new BigDecimal("0.200"), broth, broth.getUnit())
+                ));
+                recipeRepository.save(rDacBiet);
+
+                Recipe rTaiNam = new Recipe(null, bunBoTaiNam, defaultBranch, null);
+                rTaiNam.setRecipeItems(Arrays.asList(
+                    new RecipeItem(null, rTaiNam, beef.getIngredientName(), new BigDecimal("0.100"), beef, beef.getUnit()),
+                    new RecipeItem(null, rTaiNam, crabCake.getIngredientName(), new BigDecimal("1.000"), crabCake, crabCake.getUnit()),
+                    new RecipeItem(null, rTaiNam, noodles.getIngredientName(), new BigDecimal("0.150"), noodles, noodles.getUnit()),
+                    new RecipeItem(null, rTaiNam, broth.getIngredientName(), new BigDecimal("0.200"), broth, broth.getUnit())
+                ));
+                recipeRepository.save(rTaiNam);
+
+                Recipe rGioHeo = new Recipe(null, bunBoGioHeo, defaultBranch, null);
+                rGioHeo.setRecipeItems(Arrays.asList(
+                    new RecipeItem(null, rGioHeo, noodles.getIngredientName(), new BigDecimal("0.150"), noodles, noodles.getUnit()),
+                    new RecipeItem(null, rGioHeo, broth.getIngredientName(), new BigDecimal("0.200"), broth, broth.getUnit())
+                ));
+                recipeRepository.save(rGioHeo);
                 System.out.println("--> Seeded Recipes successfully!");
             }
         };
