@@ -10,6 +10,12 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
     List<InventoryTransaction> findByInventoryItemIdAndBranchIdOrderByCreatedAtDesc(
             Long inventoryItemId, Long branchId);
 
+    List<InventoryTransaction> findByBranchIdAndReferenceTypeAndReferenceIdAndTransactionType(
+            Long branchId,
+            String referenceType,
+            Long referenceId,
+            InventoryTransactionType transactionType);
+
     boolean existsByInventoryItemIdAndBranchIdAndReferenceTypeAndReferenceIdAndTransactionType(
             Long inventoryItemId,
             Long branchId,
