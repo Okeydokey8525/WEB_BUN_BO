@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "recipe_items")
@@ -25,7 +26,11 @@ public class RecipeItem {
     private String ingredientName; // Maps to InventoryItem.ingredientName
     
     @Column(nullable = false)
-    private Double amount; // Quantity required for 1 unit of Dish
+    private BigDecimal amount; // Quantity required for 1 unit of Dish
+
+    @ManyToOne
+    @JoinColumn(name = "inventory_item_id")
+    private InventoryItem inventoryItem;
     
     @Column(nullable = false)
     private String unit; // Unit e.g. "kg", "gam", "lít"

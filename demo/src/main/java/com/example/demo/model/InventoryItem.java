@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "inventory", uniqueConstraints = {
@@ -21,15 +22,20 @@ public class InventoryItem {
     private String ingredientName; // e.g. "Thịt nạm bò", "Chả cua", "Bún sợi to", "Nước cốt xương"
     
     @Column(nullable = false)
-    private Double quantity = 0.0;
+    @Column(nullable = false, precision = 19, scale = 3)
+    private BigDecimal quantity = BigDecimal.ZERO;
     
     @Column(nullable = false)
     private String unit; // e.g. "kg", "gam", "lít", "cái"
     
     @Column(nullable = false)
-    private Double minThreshold = 0.0; // Show warning if quantity < minThreshold
+    @Column(nullable = false, precision = 19, scale = 3)
+    private BigDecimal minThreshold = BigDecimal.ZERO;
     
     @ManyToOne
     @JoinColumn(name = "branch_id")
     private Branch branch;
+
+    @Version
+    private Long version;
 }
