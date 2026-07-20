@@ -108,9 +108,7 @@
                             </div>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
-                            <form th:if="${order.paymentStatus.name() == 'UNPAID'}" th:action="@{/admin/order/{id}/mark-paid(id=${order.id})}" method="post" style="margin:0;">
-                                <button type="submit" class="btn-pay" style="background:linear-gradient(135deg, #27ae60, #1e8449); color:white; padding:0.6rem 1rem; border-radius:var(--radius-sm); font-weight:600; border:none; cursor:pointer; box-shadow:0 4px 10px rgba(39,174,96,0.25); display:inline-flex; align-items:center; gap:6px; font-size:0.9rem;"><i class="fas fa-check-circle"></i> Đã thu tiền</button>
-                            </form>
+                            <a th:href="@{/cashier/orders/{id}(id=${order.id})}" class="btn-pay" style="background:linear-gradient(135deg, #27ae60, #1e8449); color:white; padding:0.6rem 1rem; border-radius:var(--radius-sm); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:0.9rem;"><i class="fas fa-cash-register"></i> Xử lý thanh toán</a>
                             <span th:if="${order.paymentStatus.name() == 'PAID'}" style="padding:0.5rem 0.8rem; background:#E8F8F5; color:#27AE60; font-weight:700; border-radius:var(--radius-sm); border:1px solid #27AE60; display:inline-flex; align-items:center; gap:6px; font-size:0.85rem;">
                                 <i class="fa-solid fa-circle-check"></i> Đã thanh toán
                             </span>
