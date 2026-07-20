@@ -4,6 +4,7 @@ import com.example.demo.dto.request.PayOrderRequest;
 import com.example.demo.dto.request.RefundOrderRequest;
 import com.example.demo.dto.response.PaymentResult;
 import com.example.demo.exception.OrderAlreadyPaidException;
+import com.example.demo.exception.InvalidPaymentAmountException;
 import com.example.demo.model.Branch;
 import com.example.demo.model.Order;
 import com.example.demo.model.PaymentTransaction;
@@ -65,6 +66,17 @@ class PaymentServiceTests {
 
         assertThrows(OrderAlreadyPaidException.class, () -> paymentService.payOrder(new PayOrderRequest(7L, PaymentMethod.CASH, new BigDecimal("100000"), null, null)));
         verifyNoInteractions(paymentTransactionRepository);
+    }
+
+    @Test
+    void cashTenderedBelowTotalIsRejected() {
+        Order order = order(100_000);
+        when(branchAccessService.requireScopedBranchId()).thenReturn(1L);
+        when(orderRepository.findByIdAndBranchId(7L, 1L)).thenReturn(Optional.of(order));
+        when(paymentTransactionRepository.existsByOrderIdAndBranchIdAndTransactionTypeAndStatus(anyLong(), anyLong(), any(), any())).thenReturn(false);
+
+        assertThrows(InvalidPaymentAmountException.class,
+                () -> paymentService.payOrder(new PayOrderRequest(7L, PaymentMethod.CASH, new BigDecimal("99999"), null, null)));
     }
 
     @Test
