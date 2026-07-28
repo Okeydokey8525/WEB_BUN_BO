@@ -94,6 +94,17 @@ public class InventoryService {
                 .allMatch(requirement -> requirement.item().getQuantity().compareTo(requirement.quantity()) >= 0);
     }
 
+    @Transactional(readOnly = true)
+    public boolean hasConsumptionForOrder(Order order) {
+        requireOrderBranchAccess(order);
+        if (order.getId() == null) {
+            return false;
+        }
+        return !inventoryTransactionRepository.findByBranchIdAndReferenceTypeAndReferenceIdAndTransactionType(
+                order.getBranch().getId(), ORDER_REFERENCE_TYPE, order.getId(),
+                InventoryTransactionType.ORDER_CONSUMPTION).isEmpty();
+    }
+
     @Transactional
     public List<InventoryTransaction> consumeForOrder(Order order) {
         requireOrderBranchAccess(order);
