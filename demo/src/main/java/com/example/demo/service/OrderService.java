@@ -37,6 +37,7 @@ public class OrderService {
     private final CurrentUserService currentUserService;
     private final OrderPricingService orderPricingService;
     private final OrderStateTransitionService orderStateTransitionService;
+    private final InventoryService inventoryService;
 
     public List<Order> listForCurrentBranch() {
         return orderRepository.findByBranchIdOrderByCreatedAtDesc(branchAccessService.requireScopedBranchId());
@@ -112,8 +113,21 @@ public class OrderService {
     @Transactional
     public void updateStatus(Long id, OrderStatus status) {
         Order order = requireOrderForCurrentBranch(id);
-        orderStateTransitionService.validate(order.getStatus(), status);
+        OrderStatus previousStatus = order.getStatus();
+        orderStateTransitionService.validate(previousStatus, status);
+
+        if (previousStatus == OrderStatus.PENDING && status == OrderStatus.CONFIRMED) {
+            inventoryService.consumeForOrder(order);
+        }
+        if (status == OrderStatus.CANCELLED && previousStatus != OrderStatus.CANCELLED) {
+            requireAllItemsPendingForAutomaticReversal(order);
+            if (inventoryService.hasConsumptionForOrder(order)) {
+                inventoryService.reverseConsumptionForOrder(order);
+            }
+        }
+
         order.setStatus(status);
+        orderRepository.save(order);
         RestaurantTable table = order.getTable();
         if (table != null) {
             branchAccessService.requireBranchAccess(table.getBranch() == null ? null : table.getBranch().getId());
@@ -125,6 +139,15 @@ public class OrderService {
                 table.setStatus(status == OrderStatus.SERVED ? TableStatus.WAITING_PAYMENT : TableStatus.OCCUPIED);
             }
             tableRepository.save(table);
+        }
+    }
+
+    private void requireAllItemsPendingForAutomaticReversal(Order order) {
+        boolean canReverse = order.getOrderItems().stream()
+                .allMatch(item -> item.getStatus() == OrderItemStatus.PENDING);
+        if (!canReverse) {
+            throw new BusinessValidationException(
+                    "Không thể hoàn kho vì món đã bắt đầu chế biến. Hãy điều chỉnh kho thủ công.");
         }
     }
 

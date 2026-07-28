@@ -3,80 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Kho - Bún Bò Gia Truyền</title>
+    <title>Quản lý kho - Bún Bò Gia Truyền</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .inventory-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        .inventory-card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .inventory-card.warning {
-            border-left: 5px solid #e74c3c;
-        }
-        .inventory-card.good {
-            border-left: 5px solid #2ecc71;
-        }
-        .update-form {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .update-input {
-            width: 80px;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .btn-update {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-update:hover {
-            background: #a93226;
-        }
-    </style>
 </head>
 <body>
-    <div class="admin-layout">
-        <aside th:replace="fragments/layout :: admin_sidebar('inventory')"></aside>
+<div class="admin-layout">
+    <aside th:replace="~{fragments/layout :: admin_sidebar('inventory')}"></aside>
+    <main class="admin-content">
+        <div th:replace="~{fragments/layout :: admin_topbar('Quản lý kho nguyên liệu', 'Tìm nguyên liệu...')}"></div>
 
-        <main class="admin-content">
-            <div th:replace="fragments/layout :: admin_topbar('Quản Lý Kho Nguyên Liệu', 'Tìm kiếm nguyên liệu, đơn vị tính...')"></div>
-            
-            <div th:if="${lowStockCount > 0}" class="alert-warning-toast" style="margin-bottom: 20px;">
-                <i class="fas fa-exclamation-triangle" style="color: var(--warning); font-size: 1.5rem;"></i>
+        <div class="alert-warning-toast" th:if="${lowStockCount > 0}" style="margin-bottom: 1.25rem;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning); font-size:1.4rem;"></i>
+            <div><strong>Cần theo dõi tồn kho.</strong> Có <span th:text="${lowStockCount}">0</span> nguyên liệu sắp hết hoặc đã hết.</div>
+        </div>
+        <div th:if="${successMessage}" class="alert-warning-toast" style="margin-bottom: 1.25rem; border-left-color:#27ae60;">
+            <i class="fa-solid fa-circle-check" style="color:#27ae60; font-size:1.4rem;"></i>
+            <span th:text="${successMessage}"></span>
+        </div>
+
+        <section class="panel" style="padding:0; overflow:hidden;">
+            <div style="padding:1.25rem 1.5rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
                 <div>
-                    <strong style="color: var(--secondary);">Cảnh báo nguyên liệu sắp hết!</strong>
-                    <div>Có <strong th:text="${lowStockCount}">0</strong> nguyên liệu đang dưới mức tối thiểu. Cần khẩn trương nhập thêm!</div>
+                    <h2 style="margin:0; color:var(--text-dark);">Tồn kho hiện tại</h2>
+                    <p style="margin:.35rem 0 0; color:var(--text-light);" th:text="${currentBranch != null ? currentBranch.name : 'Chi nhánh hiện tại'}">Chi nhánh hiện tại</p>
                 </div>
+                <a class="btn-secondary" th:href="@{/admin/recipes}" style="text-decoration:none;"><i class="fa-solid fa-book-open"></i> Quản lý công thức</a>
             </div>
-
-            <div class="inventory-grid">
-                <div th:each="item : ${inventoryItems}" class="inventory-card" th:classappend="${item.quantity <= item.minThreshold} ? 'warning' : 'good'">
-                    <h3 th:text="${item.ingredientName}" style="margin-top:0; color: var(--text-dark);">Nguyên Liệu</h3>
-                    <p>Số lượng hiện tại: <strong th:text="${item.quantity} + ' ' + ${item.unit}" style="color: var(--primary); font-size: 1.15rem;">0 kg</strong></p>
-                    <p style="color: var(--text-light); font-size: 0.9em; margin-bottom: 1rem;">Mức tối thiểu: <span th:text="${item.minThreshold} + ' ' + ${item.unit}">0 kg</span></p>
-
-                    <form class="update-form" th:action="@{/admin/inventory/update}" method="post" style="display:flex; gap:8px;">
-                        <input type="hidden" name="itemId" th:value="${item.id}">
-                        <input type="number" step="0.1" name="quantity" class="update-input" th:value="${item.quantity}" style="flex:1; padding:0.5rem; border:1px solid #CCC; border-radius:4px;" required>
-                        <button type="submit" class="btn-update" style="background:var(--primary); color:white; border:none; padding:0.5rem 1rem; border-radius:4px; cursor:pointer; font-weight:600;"><i class="fas fa-save"></i> Lưu</button>
-                    </form>
-                </div>
+            <div class="admin-table" style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead><tr>
+                        <th>Nguyên liệu</th><th>Số lượng</th><th>Đơn vị</th><th>Mức tối thiểu</th><th>Trạng thái</th><th>Chi nhánh</th><th style="text-align:right;">Thao tác</th>
+                    </tr></thead>
+                    <tbody>
+                    <tr th:each="item : ${inventoryItems}">
+                        <td><strong th:text="${item.ingredientName}">Nguyên liệu</strong></td>
+                        <td th:text="${item.quantity.stripTrailingZeros().toPlainString()}">0</td>
+                        <td th:text="${item.unit}">kg</td>
+                        <td th:text="${item.minThreshold.stripTrailingZeros().toPlainString()}">0</td>
+                        <td>
+                            <span th:if="${item.quantity.signum() == 0}" class="status-badge" style="background:#fdecea; color:#c0392b;">Hết hàng</span>
+                            <span th:if="${item.quantity.signum() > 0 and item.quantity.compareTo(item.minThreshold) <= 0}" class="status-badge" style="background:#fff3cd; color:#a66c00;">Sắp hết</span>
+                            <span th:if="${item.quantity.compareTo(item.minThreshold) > 0}" class="status-badge" style="background:#e8f8f0; color:#1e8449;">Đủ hàng</span>
+                        </td>
+                        <td th:text="${item.branch != null ? item.branch.name : '-'}">Chi nhánh</td>
+                        <td style="text-align:right; white-space:nowrap;">
+                            <a th:href="@{/admin/inventory/{id}(id=${item.id})}" class="btn-secondary" style="text-decoration:none; padding:.45rem .7rem;"><i class="fa-solid fa-eye"></i> Chi tiết</a>
+                            <a th:href="@{/admin/inventory/{id}/transactions(id=${item.id})}" class="btn-secondary" style="text-decoration:none; padding:.45rem .7rem; margin-left:.35rem;"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(inventoryItems)}"><td colspan="7" style="text-align:center; padding:2rem; color:var(--text-light);">Chưa có nguyên liệu cho chi nhánh này.</td></tr>
+                    </tbody>
+                </table>
             </div>
-        </main>
-    </div>
+        </section>
+    </main>
+</div>
 </body>
 </html>

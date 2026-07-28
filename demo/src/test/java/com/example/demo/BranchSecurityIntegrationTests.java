@@ -370,9 +370,9 @@ class BranchSecurityIntegrationTests {
     private InventoryItem inventory(String name, Branch branch) {
         InventoryItem item = new InventoryItem();
         item.setIngredientName(name);
-        item.setQuantity(10.0);
+        item.setQuantity(new BigDecimal("10.000"));
         item.setUnit("kg");
-        item.setMinThreshold(2.0);
+        item.setMinThreshold(new BigDecimal("2.000"));
         item.setBranch(branch);
         return item;
     }
