@@ -59,6 +59,9 @@ public class RecipeService {
 
     @Transactional
     public RecipeItem addRecipeItem(Long recipeId, RecipeItemRequest request) {
+        if (request.quantityRequired() == null || request.quantityRequired().signum() <= 0) {
+            throw new BusinessValidationException("Số lượng nguyên liệu phải lớn hơn 0.");
+        }
         Long branchId = branchAccessService.requireScopedBranchId();
         Recipe recipe = requireRecipe(recipeId, branchId);
         InventoryItem inventoryItem = inventoryRepository.findByIdAndBranchId(request.inventoryItemId(), branchId)

@@ -43,6 +43,18 @@ public class InventoryService {
         return inventoryRepository.findLowStockItemsByBranch(branchAccessService.requireScopedBranchId());
     }
 
+    @Transactional(readOnly = true)
+    public InventoryItem getForCurrentBranch(Long itemId) {
+        return requireItemForCurrentBranch(itemId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventoryTransaction> getTransactionsForCurrentBranch(Long itemId) {
+        InventoryItem item = requireItemForCurrentBranch(itemId);
+        return inventoryTransactionRepository.findByInventoryItemIdAndBranchIdOrderByCreatedAtDesc(
+                item.getId(), item.getBranch().getId());
+    }
+
     @Transactional
     public void updateQuantity(Long itemId, BigDecimal quantity) {
         InventoryItem item = inventoryRepository.findByIdAndBranchId(itemId, branchAccessService.requireScopedBranchId())

@@ -5,12 +5,17 @@ import com.example.demo.repository.*;
 import com.example.demo.model.enums.OrderStatus;
 import com.example.demo.model.enums.PaymentStatus;
 import com.example.demo.model.enums.TableStatus;
+import com.example.demo.dto.request.AdjustInventoryRequest;
+import com.example.demo.dto.request.StockInRequest;
+import com.example.demo.model.enums.InventoryTransactionType;
+import jakarta.validation.Valid;
 import com.example.demo.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -127,6 +132,44 @@ public class AdminController {
         inventoryService.updateQuantity(itemId, quantity);
         
         return "redirect:/admin/inventory";
+    }
+
+    @GetMapping("/inventory/{id}")
+    public String inventoryDetail(@PathVariable Long id, Model model) {
+        model.addAttribute("inventoryItem", inventoryService.getForCurrentBranch(id));
+        model.addAttribute("inventoryItems", inventoryService.listForCurrentBranch());
+        model.addAttribute("lowStockCount", inventoryService.lowStockForCurrentBranch().size());
+        return "admin/inventory";
+    }
+
+    @PostMapping("/inventory/{id}/stock-in")
+    public String stockIn(@PathVariable Long id, @Valid @ModelAttribute StockInRequest request,
+                          RedirectAttributes redirectAttributes) {
+        inventoryService.stockIn(id, request.quantity(), request.reason());
+        redirectAttributes.addFlashAttribute("successMessage", "Đã nhập kho thành công.");
+        return "redirect:/admin/inventory/" + id;
+    }
+
+    @PostMapping("/inventory/{id}/adjust")
+    public String adjust(@PathVariable Long id, @Valid @ModelAttribute AdjustInventoryRequest request,
+                         RedirectAttributes redirectAttributes) {
+        if (request.direction() != InventoryTransactionType.ADJUSTMENT_IN
+                && request.direction() != InventoryTransactionType.ADJUSTMENT_OUT) {
+            throw new com.example.demo.exception.BusinessValidationException("Loại điều chỉnh kho không hợp lệ.");
+        }
+        inventoryService.adjustStock(id, request.direction() == InventoryTransactionType.ADJUSTMENT_IN
+                ? request.quantity() : request.quantity().negate(), request.reason());
+        redirectAttributes.addFlashAttribute("successMessage", "Đã điều chỉnh tồn kho.");
+        return "redirect:/admin/inventory/" + id;
+    }
+
+    @GetMapping("/inventory/{id}/transactions")
+    public String inventoryTransactions(@PathVariable Long id, Model model) {
+        model.addAttribute("inventoryItem", inventoryService.getForCurrentBranch(id));
+        model.addAttribute("transactions", inventoryService.getTransactionsForCurrentBranch(id));
+        model.addAttribute("inventoryItems", inventoryService.listForCurrentBranch());
+        model.addAttribute("lowStockCount", inventoryService.lowStockForCurrentBranch().size());
+        return "admin/inventory";
     }
 
     // --- Menu CRUD ---
