@@ -350,6 +350,9 @@
                 <li th:class="${activeTab == 'inventory' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''INVENTORY'')')}">
                     <a href="/admin/inventory"><i class="fa-solid fa-warehouse"></i> Kho nguyên liệu</a>
                 </li>
+                <li th:class="${activeTab == 'recipes' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''INVENTORY'')')}">
+                    <a href="/admin/recipes"><i class="fa-solid fa-book-open"></i> Công thức món</a>
+                </li>
             </ul>
         </div>
         

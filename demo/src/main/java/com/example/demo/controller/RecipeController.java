@@ -4,6 +4,7 @@ import com.example.demo.dto.request.CreateRecipeRequest;
 import com.example.demo.dto.request.RecipeItemRequest;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.service.InventoryService;
+import com.example.demo.service.DishService;
 import com.example.demo.service.RecipeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,25 +13,37 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Controller
 @RequestMapping("/admin/recipes")
 @RequiredArgsConstructor
 public class RecipeController {
     private final RecipeService recipeService;
     private final InventoryService inventoryService;
+    private final DishService dishService;
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("recipes", recipeService.getRecipesForCurrentBranch());
+        var recipes = recipeService.getRecipesForCurrentBranch();
+        model.addAttribute("recipes", recipes);
+        model.addAttribute("recipeByDish", recipes.stream()
+                .collect(Collectors.toMap(recipe -> recipe.getDish().getId(), Function.identity())));
+        model.addAttribute("dishes", dishService.listForCurrentBranch());
         model.addAttribute("inventoryOptions", inventoryService.listForCurrentBranch());
-        return inventoryModel(model);
+        return "admin/recipes";
     }
 
     @GetMapping("/dish/{dishId}")
     public String byDish(@PathVariable Long dishId, Model model) {
-        model.addAttribute("recipe", recipeService.getRecipeForDish(dishId));
+        var recipe = recipeService.getRecipeForDish(dishId);
+        model.addAttribute("recipe", recipe);
+        model.addAttribute("usedInventoryItemIds", recipe.getRecipeItems().stream()
+                .map(item -> item.getInventoryItem().getId())
+                .collect(Collectors.toSet()));
         model.addAttribute("inventoryOptions", inventoryService.listForCurrentBranch());
-        return inventoryModel(model);
+        return "admin/recipe-detail";
     }
 
     @PostMapping("/dish/{dishId}")
@@ -60,9 +73,4 @@ public class RecipeController {
         return "redirect:/admin/recipes";
     }
 
-    private String inventoryModel(Model model) {
-        model.addAttribute("inventoryItems", inventoryService.listForCurrentBranch());
-        model.addAttribute("lowStockCount", inventoryService.lowStockForCurrentBranch().size());
-        return "admin/inventory";
-    }
 }
