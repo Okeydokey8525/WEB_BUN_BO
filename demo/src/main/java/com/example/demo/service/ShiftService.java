@@ -122,7 +122,18 @@ public class ShiftService {
 
     @Transactional(readOnly = true)
     public List<ShiftSummary> getBranchShifts() {
-        throw new UnsupportedOperationException("Not implemented yet");
+        User actor = currentUserService.getCurrentUser();
+        Branch branch = currentUserService.requireCurrentBranch();
+        if (actor.getRole() == null) throw new ShiftAccessDeniedException();
+        List<WorkShift> shifts;
+        if ("ROLE_ADMIN".equals(actor.getRole().getName())) {
+            shifts = workShiftRepository.findByBranchIdOrderByOpenedAtDesc(branch.getId());
+        } else if ("ROLE_CASHIER".equals(actor.getRole().getName())) {
+            shifts = workShiftRepository.findByBranchIdAndCashierIdOrderByOpenedAtDesc(branch.getId(), actor.getId());
+        } else {
+            throw new ShiftAccessDeniedException();
+        }
+        return shifts.stream().map(this::toSummary).toList();
     }
 
     private ShiftSummary toSummary(WorkShift shift) {

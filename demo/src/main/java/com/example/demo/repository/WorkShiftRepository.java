@@ -15,6 +15,7 @@ public interface WorkShiftRepository extends JpaRepository<WorkShift, Long> {
     Optional<WorkShift> findByCashierIdAndStatus(Long cashierId, ShiftStatus status);
     Optional<WorkShift> findByIdAndBranchId(Long id, Long branchId);
     List<WorkShift> findByBranchIdOrderByOpenedAtDesc(Long branchId);
+    List<WorkShift> findByBranchIdAndCashierIdOrderByOpenedAtDesc(Long branchId, Long cashierId);
     boolean existsByCashierIdAndStatus(Long cashierId, ShiftStatus status);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
