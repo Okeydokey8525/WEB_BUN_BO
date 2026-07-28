@@ -2,9 +2,12 @@ package com.example.demo;
 
 import com.example.demo.dto.request.OpenShiftRequest;
 import com.example.demo.dto.response.OpenShiftResult;
+import com.example.demo.dto.response.ShiftSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.exception.ShiftAlreadyOpenException;
+import com.example.demo.exception.ShiftAccessDeniedException;
+import com.example.demo.exception.ShiftNotOpenException;
 import com.example.demo.model.*;
 import com.example.demo.model.enums.ShiftStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
@@ -22,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -83,7 +87,26 @@ class ShiftServiceTests {
     @Test void kitchenRoleIsRejected() { assertRoleRejected("ROLE_KITCHEN"); }
     @Test void adminCanOpenShift() { cashier = user("ROLE_ADMIN"); when(currentUserService.getCurrentUser()).thenReturn(cashier); when(workShiftRepository.findOpenShiftForCashierForUpdate(2L, ShiftStatus.OPEN)).thenReturn(Optional.empty()); shiftService.openShift(new OpenShiftRequest(BigDecimal.ZERO, null)); verify(workShiftRepository).save(any()); }
 
+    @Test void currentShiftReturnsOnlyCurrentCashierOpenShiftAndMapsAllFields() {
+        WorkShift shift = shift(10L, cashier, branch, ShiftStatus.OPEN); shift.setClosedAt(LocalDateTime.now()); shift.setNote("note");
+        when(workShiftRepository.findByCashierIdAndStatus(2L, ShiftStatus.OPEN)).thenReturn(Optional.of(shift));
+        ShiftSummary summary = shiftService.getCurrentShift();
+        assertEquals(10L, summary.shiftId()); assertEquals(ShiftStatus.OPEN, summary.status()); assertEquals(1L, summary.branchId()); assertEquals("Branch A", summary.branchName()); assertEquals(2L, summary.cashierId()); assertEquals("cashier-a", summary.cashierUsername()); assertEquals(new BigDecimal("500000"), summary.openingCash()); assertEquals(BigDecimal.ZERO, summary.expectedCash()); assertEquals(BigDecimal.ZERO, summary.refundTotal()); assertEquals(0, summary.orderCount()); assertNotNull(summary.openedAt()); assertNotNull(summary.closedAt());
+        verify(workShiftRepository).findByCashierIdAndStatus(2L, ShiftStatus.OPEN);
+    }
+    @Test void currentShiftAbsentOrClosedIsRejected() { when(workShiftRepository.findByCashierIdAndStatus(2L, ShiftStatus.OPEN)).thenReturn(Optional.empty()); assertThrows(ShiftNotOpenException.class, () -> shiftService.getCurrentShift()); }
+    @Test void currentShiftWithoutBranchIsRejected() { when(currentUserService.requireCurrentBranch()).thenThrow(new BranchAccessDeniedException("No branch")); assertThrows(BranchAccessDeniedException.class, () -> shiftService.getCurrentShift()); }
+    @Test void cashierCanViewOwnShiftAndUsesBranchAwareQuery() { WorkShift shift = shift(11L, cashier, branch, ShiftStatus.OPEN); when(workShiftRepository.findByIdAndBranchId(11L, 1L)).thenReturn(Optional.of(shift)); assertEquals(11L, shiftService.getShift(11L).shiftId()); verify(workShiftRepository).findByIdAndBranchId(11L, 1L); }
+    @Test void cashierCannotViewAnotherCashierShift() { User other = user("ROLE_CASHIER"); other.setId(3L); WorkShift shift = shift(12L, other, branch, ShiftStatus.OPEN); when(workShiftRepository.findByIdAndBranchId(12L, 1L)).thenReturn(Optional.of(shift)); assertThrows(ShiftAccessDeniedException.class, () -> shiftService.getShift(12L)); }
+    @Test void adminCanViewSameBranchCashierShift() { cashier = user("ROLE_ADMIN"); when(currentUserService.getCurrentUser()).thenReturn(cashier); User other = user("ROLE_CASHIER"); other.setId(3L); WorkShift shift = shift(13L, other, branch, ShiftStatus.CLOSED); when(workShiftRepository.findByIdAndBranchId(13L, 1L)).thenReturn(Optional.of(shift)); assertEquals(13L, shiftService.getShift(13L).shiftId()); }
+    @Test void crossBranchAndMissingShiftAreNotFoundThroughScopedQuery() { when(workShiftRepository.findByIdAndBranchId(14L, 1L)).thenReturn(Optional.empty()); assertThrows(com.example.demo.exception.ResourceNotFoundException.class, () -> shiftService.getShift(14L)); verify(workShiftRepository).findByIdAndBranchId(14L, 1L); }
+    @Test void nullShiftIdIsRejectedWithoutRepositoryCall() { assertThrows(BusinessValidationException.class, () -> shiftService.getShift(null)); verify(workShiftRepository, never()).findByIdAndBranchId(any(), any()); }
+    @Test void getShiftWithoutBranchIsRejected() { when(currentUserService.requireCurrentBranch()).thenThrow(new BranchAccessDeniedException("No branch")); assertThrows(BranchAccessDeniedException.class, () -> shiftService.getShift(16L)); verify(workShiftRepository, never()).findByIdAndBranchId(any(), any()); }
+    @Test void userAndKitchenRolesCannotViewShift() { assertLookupRoleRejected("ROLE_USER"); assertLookupRoleRejected("ROLE_KITCHEN"); }
+
     private void assertRoleRejected(String roleName) { cashier = user(roleName); when(currentUserService.getCurrentUser()).thenReturn(cashier); assertThrows(BusinessValidationException.class, () -> shiftService.openShift(new OpenShiftRequest(BigDecimal.ZERO, null))); verify(workShiftRepository, never()).save(any()); }
     private User user(String roleName) { Role role = new Role(); role.setName(roleName); User user = new User(); user.setId(2L); user.setUsername("cashier-a"); user.setRole(role); user.setBranch(branch); return user; }
+    private WorkShift shift(Long id, User owner, Branch branch, ShiftStatus status) { WorkShift shift = new WorkShift(); shift.setId(id); shift.setCashier(owner); shift.setOpenedBy(owner); shift.setBranch(branch); shift.setStatus(status); shift.setOpenedAt(LocalDateTime.now()); shift.setOpeningCash(new BigDecimal("500000")); shift.setExpectedCash(BigDecimal.ZERO); shift.setActualCash(BigDecimal.ZERO); shift.setCashDifference(BigDecimal.ZERO); shift.setTotalSales(BigDecimal.ZERO); shift.setCashSales(BigDecimal.ZERO); shift.setTransferSales(BigDecimal.ZERO); shift.setCardSales(BigDecimal.ZERO); shift.setRefundTotal(BigDecimal.ZERO); return shift; }
+    private void assertLookupRoleRejected(String roleName) { cashier = user(roleName); when(currentUserService.getCurrentUser()).thenReturn(cashier); assertThrows(ShiftAccessDeniedException.class, () -> shiftService.getShift(15L)); }
     private void assertSnapshotsZero(WorkShift shift) { assertEquals(BigDecimal.ZERO, shift.getExpectedCash()); assertEquals(BigDecimal.ZERO, shift.getActualCash()); assertEquals(BigDecimal.ZERO, shift.getCashDifference()); assertEquals(BigDecimal.ZERO, shift.getTotalSales()); assertEquals(BigDecimal.ZERO, shift.getCashSales()); assertEquals(BigDecimal.ZERO, shift.getTransferSales()); assertEquals(BigDecimal.ZERO, shift.getCardSales()); assertEquals(BigDecimal.ZERO, shift.getRefundTotal()); assertEquals(0, shift.getOrderCount()); }
 }
