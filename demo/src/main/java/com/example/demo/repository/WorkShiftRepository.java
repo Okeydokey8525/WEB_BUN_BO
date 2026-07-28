@@ -21,4 +21,8 @@ public interface WorkShiftRepository extends JpaRepository<WorkShift, Long> {
     @Query("select s from WorkShift s where s.cashier.id = :cashierId and s.status = :status")
     Optional<WorkShift> findOpenShiftForCashierForUpdate(@Param("cashierId") Long cashierId,
                                                           @Param("status") ShiftStatus status);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from WorkShift s where s.id = :id and s.branch.id = :branchId")
+    Optional<WorkShift> findForUpdateByIdAndBranchId(@Param("id") Long id, @Param("branchId") Long branchId);
 }

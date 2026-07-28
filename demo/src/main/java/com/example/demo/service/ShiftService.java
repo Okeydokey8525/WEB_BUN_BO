@@ -9,6 +9,7 @@ import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.exception.ShiftAlreadyOpenException;
 import com.example.demo.exception.ShiftAccessDeniedException;
 import com.example.demo.exception.ShiftNotOpenException;
+import com.example.demo.exception.ShiftAlreadyClosedException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.model.Branch;
 import com.example.demo.model.User;
@@ -16,6 +17,7 @@ import com.example.demo.model.WorkShift;
 import com.example.demo.model.enums.ShiftStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.WorkShiftRepository;
+import com.example.demo.repository.projection.ShiftPaymentAggregate;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
 import org.springframework.stereotype.Service;
@@ -96,7 +98,26 @@ public class ShiftService {
     }
 
     public CloseShiftResult closeShift(CloseShiftRequest request) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        if (request == null || request.shiftId() == null || request.actualCash() == null || request.actualCash().signum() < 0) {
+            throw new BusinessValidationException("Thông tin đóng ca không hợp lệ.");
+        }
+        User actor = currentUserService.getCurrentUser();
+        Branch branch = currentUserService.requireCurrentBranch();
+        if (actor.getRole() == null || (!"ROLE_CASHIER".equals(actor.getRole().getName()) && !"ROLE_ADMIN".equals(actor.getRole().getName()))) throw new ShiftAccessDeniedException();
+        WorkShift shift = workShiftRepository.findForUpdateByIdAndBranchId(request.shiftId(), branch.getId()).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ca làm việc."));
+        if ("ROLE_CASHIER".equals(actor.getRole().getName()) && !actor.getId().equals(shift.getCashier().getId())) throw new ShiftAccessDeniedException();
+        if (shift.getStatus() == ShiftStatus.CLOSED) throw new ShiftAlreadyClosedException();
+        if (shift.getStatus() != ShiftStatus.OPEN) throw new ShiftNotOpenException();
+        ShiftPaymentAggregate a = paymentTransactionRepository.aggregateCompletedTransactionsByShiftId(shift.getId());
+        BigDecimal cashIn = zero(a.getCashPaymentTotal()), cashOut = zero(a.getCashRefundTotal());
+        BigDecimal expected = zero(shift.getOpeningCash()).add(cashIn).subtract(cashOut);
+        BigDecimal total = zero(a.getGrossPaymentTotal()).subtract(zero(a.getRefundTotal()));
+        shift.setExpectedCash(expected); shift.setActualCash(request.actualCash()); shift.setCashDifference(request.actualCash().subtract(expected));
+        shift.setTotalSales(total); shift.setCashSales(cashIn.subtract(cashOut)); shift.setTransferSales(zero(a.getTransferPaymentTotal()).subtract(zero(a.getTransferRefundTotal()))); shift.setCardSales(zero(a.getCardPaymentTotal()).subtract(zero(a.getCardRefundTotal()))); shift.setRefundTotal(zero(a.getRefundTotal())); shift.setOrderCount(a.getDistinctOrderCount() == null ? 0 : a.getDistinctOrderCount());
+        shift.setClosedAt(LocalDateTime.now()); shift.setClosedBy(actor); shift.setStatus(ShiftStatus.CLOSED);
+        if (request.note() != null && !request.note().isBlank()) shift.setNote(shift.getNote() == null || shift.getNote().isBlank() ? request.note() : shift.getNote() + " | Close: " + request.note());
+        WorkShift saved = workShiftRepository.save(shift);
+        return new CloseShiftResult(saved.getId(), saved.getStatus(), saved.getClosedAt(), saved.getExpectedCash(), saved.getActualCash(), saved.getCashDifference(), saved.getTotalSales(), saved.getCashSales(), saved.getTransferSales(), saved.getCardSales(), saved.getRefundTotal(), saved.getOrderCount());
     }
 
     @Transactional(readOnly = true)
@@ -111,4 +132,5 @@ public class ShiftService {
                 shift.getTotalSales(), shift.getCashSales(), shift.getTransferSales(), shift.getCardSales(),
                 shift.getRefundTotal(), shift.getOrderCount(), shift.getNote());
     }
+    private BigDecimal zero(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }
 }
