@@ -137,9 +137,8 @@ public class AdminController {
     @GetMapping("/inventory/{id}")
     public String inventoryDetail(@PathVariable Long id, Model model) {
         model.addAttribute("inventoryItem", inventoryService.getForCurrentBranch(id));
-        model.addAttribute("inventoryItems", inventoryService.listForCurrentBranch());
-        model.addAttribute("lowStockCount", inventoryService.lowStockForCurrentBranch().size());
-        return "admin/inventory";
+        model.addAttribute("transactions", inventoryService.getTransactionsForCurrentBranch(id));
+        return "admin/inventory-detail";
     }
 
     @PostMapping("/inventory/{id}/stock-in")
@@ -167,9 +166,7 @@ public class AdminController {
     public String inventoryTransactions(@PathVariable Long id, Model model) {
         model.addAttribute("inventoryItem", inventoryService.getForCurrentBranch(id));
         model.addAttribute("transactions", inventoryService.getTransactionsForCurrentBranch(id));
-        model.addAttribute("inventoryItems", inventoryService.listForCurrentBranch());
-        model.addAttribute("lowStockCount", inventoryService.lowStockForCurrentBranch().size());
-        return "admin/inventory";
+        return "admin/inventory-detail";
     }
 
     // --- Menu CRUD ---
