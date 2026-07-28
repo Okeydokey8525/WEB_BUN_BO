@@ -7,6 +7,9 @@ import com.example.demo.dto.response.OpenShiftResult;
 import com.example.demo.dto.response.ShiftSummary;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.exception.ShiftAlreadyOpenException;
+import com.example.demo.exception.ShiftAccessDeniedException;
+import com.example.demo.exception.ShiftNotOpenException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.model.Branch;
 import com.example.demo.model.User;
 import com.example.demo.model.WorkShift;
@@ -66,12 +69,30 @@ public class ShiftService {
 
     @Transactional(readOnly = true)
     public ShiftSummary getCurrentShift() {
-        throw new UnsupportedOperationException("Not implemented yet");
+        User actor = currentUserService.getCurrentUser();
+        currentUserService.requireCurrentBranch();
+        WorkShift shift = workShiftRepository.findByCashierIdAndStatus(actor.getId(), ShiftStatus.OPEN)
+                .orElseThrow(ShiftNotOpenException::new);
+        return toSummary(shift);
     }
 
     @Transactional(readOnly = true)
     public ShiftSummary getShift(Long shiftId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        if (shiftId == null) {
+            throw new BusinessValidationException("Mã ca làm việc là bắt buộc.");
+        }
+        User actor = currentUserService.getCurrentUser();
+        Branch branch = currentUserService.requireCurrentBranch();
+        if (actor.getRole() == null || (!"ROLE_CASHIER".equals(actor.getRole().getName())
+                && !"ROLE_ADMIN".equals(actor.getRole().getName()))) {
+            throw new ShiftAccessDeniedException();
+        }
+        WorkShift shift = workShiftRepository.findByIdAndBranchId(shiftId, branch.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ca làm việc."));
+        if ("ROLE_CASHIER".equals(actor.getRole().getName()) && !actor.getId().equals(shift.getCashier().getId())) {
+            throw new ShiftAccessDeniedException();
+        }
+        return toSummary(shift);
     }
 
     public CloseShiftResult closeShift(CloseShiftRequest request) {
