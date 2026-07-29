@@ -6,6 +6,7 @@ import com.example.demo.model.enums.PaymentTransactionType;
 import com.example.demo.repository.projection.ShiftPaymentAggregate;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
 import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
+import com.example.demo.repository.projection.DailyRevenueProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -67,6 +68,18 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             + "and t.completedAt >= :fromInclusive and t.completedAt < :toExclusive "
             + "group by t.paymentMethod")
     List<PaymentMethodAggregateProjection> aggregateByPaymentMethodAndBranchAndCompletedAt(
+            @Param("branchId") Long branchId,
+            @Param("fromInclusive") LocalDateTime fromInclusive,
+            @Param("toExclusive") LocalDateTime toExclusive);
+
+    @Query(value = "select cast(t.completed_at as date) as \"revenueDate\", "
+            + "coalesce(sum(case when t.transaction_type = 'PAYMENT' then t.amount else 0 end), 0) as \"grossSales\", "
+            + "coalesce(sum(case when t.transaction_type = 'REFUND' then t.amount else 0 end), 0) as \"refundTotal\", "
+            + "count(distinct case when t.transaction_type = 'PAYMENT' then t.order_id end) as \"paidOrderCount\" "
+            + "from payment_transactions t where t.branch_id = :branchId and t.status = 'COMPLETED' "
+            + "and t.completed_at >= :fromInclusive and t.completed_at < :toExclusive "
+            + "group by cast(t.completed_at as date) order by cast(t.completed_at as date)", nativeQuery = true)
+    List<DailyRevenueProjection> aggregateDailyRevenueByBranchAndCompletedAt(
             @Param("branchId") Long branchId,
             @Param("fromInclusive") LocalDateTime fromInclusive,
             @Param("toExclusive") LocalDateTime toExclusive);

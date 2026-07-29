@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.request.ReportFilterRequest;
+import com.example.demo.dto.response.DailyRevenueSummary;
 import com.example.demo.dto.response.PaymentMethodSummary;
 import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
@@ -10,6 +11,7 @@ import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
+import com.example.demo.repository.projection.DailyRevenueProjection;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
@@ -23,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -82,6 +85,32 @@ public class ReportingService {
                 .toList();
     }
 
+    public List<DailyRevenueSummary> getDailyRevenue(ReportFilterRequest filter) {
+        validateFilter(filter);
+        Long branchId = requireAdminBranchId();
+        LocalDateTime fromInclusive = filter.fromDate().atStartOfDay();
+        LocalDateTime toExclusive = filter.toDate().plusDays(1).atStartOfDay();
+        List<DailyRevenueProjection> aggregates = paymentTransactionRepository
+                .aggregateDailyRevenueByBranchAndCompletedAt(branchId, fromInclusive, toExclusive);
+        Map<LocalDate, DailyRevenueProjection> byDate = new HashMap<>();
+        for (DailyRevenueProjection aggregate : aggregates == null ? List.<DailyRevenueProjection>of() : aggregates) {
+            if (aggregate == null || aggregate.getRevenueDate() == null) {
+                continue;
+            }
+            LocalDate date = aggregate.getRevenueDate();
+            if (date.isBefore(filter.fromDate()) || date.isAfter(filter.toDate())) {
+                throw new BusinessValidationException("Du lieu doanh thu nam ngoai khoang bao cao.");
+            }
+            if (byDate.putIfAbsent(date, aggregate) != null) {
+                throw new BusinessValidationException("Du lieu doanh thu theo ngay bi trung lap.");
+            }
+        }
+
+        return filter.fromDate().datesUntil(filter.toDate().plusDays(1))
+                .map(date -> toDailyRevenueSummary(date, byDate.get(date)))
+                .toList();
+    }
+
     private Long requireAdminBranchId() {
         User actor = currentUserService.getCurrentUser();
         if (actor.getRole() == null || !"ROLE_ADMIN".equals(actor.getRole().getName())) {
@@ -130,5 +159,17 @@ public class ReportingService {
             return 1;
         }
         return 2;
+    }
+
+    private DailyRevenueSummary toDailyRevenueSummary(LocalDate date, DailyRevenueProjection aggregate) {
+        BigDecimal grossSales = aggregate == null ? BigDecimal.ZERO : zero(aggregate.getGrossSales());
+        BigDecimal refundTotal = aggregate == null ? BigDecimal.ZERO : zero(aggregate.getRefundTotal());
+        long paidOrderCount = aggregate == null || aggregate.getPaidOrderCount() == null
+                ? 0L : aggregate.getPaidOrderCount();
+        BigDecimal netRevenue = grossSales.subtract(refundTotal);
+        BigDecimal averageOrderValue = paidOrderCount > 0
+                ? netRevenue.divide(BigDecimal.valueOf(paidOrderCount), 0, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        return new DailyRevenueSummary(date, grossSales, refundTotal, netRevenue, paidOrderCount, averageOrderValue);
     }
 }
