@@ -6,14 +6,17 @@ import com.example.demo.dto.response.PaymentMethodSummary;
 import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.dto.response.TopDishSummary;
 import com.example.demo.dto.response.InventoryConsumptionSummary;
+import com.example.demo.dto.response.ShiftReportSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.model.User;
+import com.example.demo.model.WorkShift;
 import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.OrderItemRepository;
 import com.example.demo.repository.InventoryTransactionRepository;
+import com.example.demo.repository.WorkShiftRepository;
 import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
 import com.example.demo.repository.projection.DailyRevenueProjection;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
@@ -45,17 +48,20 @@ public class ReportingService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final OrderItemRepository orderItemRepository;
     private final InventoryTransactionRepository inventoryTransactionRepository;
+    private final WorkShiftRepository workShiftRepository;
     private final CurrentUserService currentUserService;
     private final BranchAccessService branchAccessService;
 
     public ReportingService(PaymentTransactionRepository paymentTransactionRepository,
                             OrderItemRepository orderItemRepository,
                             InventoryTransactionRepository inventoryTransactionRepository,
+                            WorkShiftRepository workShiftRepository,
                             CurrentUserService currentUserService,
                             BranchAccessService branchAccessService) {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.orderItemRepository = orderItemRepository;
         this.inventoryTransactionRepository = inventoryTransactionRepository;
+        this.workShiftRepository = workShiftRepository;
         this.currentUserService = currentUserService;
         this.branchAccessService = branchAccessService;
     }
@@ -152,6 +158,14 @@ public class ReportingService {
                 .filter(aggregate -> aggregate != null).map(this::toInventoryConsumptionSummary).toList();
     }
 
+    public List<ShiftReportSummary> getShiftReports(ReportFilterRequest filter) {
+        validateFilter(filter);
+        Long branchId = requireAdminBranchId();
+        return workShiftRepository.findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(
+                branchId, filter.fromDate().atStartOfDay(), filter.toDate().plusDays(1).atStartOfDay())
+                .stream().map(this::toShiftReportSummary).toList();
+    }
+
     private Long requireAdminBranchId() {
         User actor = currentUserService.getCurrentUser();
         if (actor.getRole() == null || !"ROLE_ADMIN".equals(actor.getRole().getName())) {
@@ -226,5 +240,12 @@ public class ReportingService {
         BigDecimal reversed = zero(aggregate.getReversedQuantity());
         return new InventoryConsumptionSummary(aggregate.getInventoryItemId(), aggregate.getInventoryItemName(), aggregate.getUnit(),
                 consumed, reversed, consumed.subtract(reversed), zero(aggregate.getWasteQuantity()));
+    }
+
+    private ShiftReportSummary toShiftReportSummary(WorkShift shift) {
+        return new ShiftReportSummary(shift.getId(), shift.getCashier().getId(), shift.getCashier().getUsername(), shift.getStatus(),
+                shift.getOpenedAt(), shift.getClosedAt(), zero(shift.getOpeningCash()), zero(shift.getExpectedCash()),
+                shift.getActualCash(), zero(shift.getCashDifference()), zero(shift.getTotalSales()), zero(shift.getCashSales()),
+                zero(shift.getTransferSales()), zero(shift.getCardSales()), zero(shift.getRefundTotal()), shift.getOrderCount(), shift.getNote());
     }
 }

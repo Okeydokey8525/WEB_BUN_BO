@@ -10,12 +10,15 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 public interface WorkShiftRepository extends JpaRepository<WorkShift, Long> {
     Optional<WorkShift> findByCashierIdAndStatus(Long cashierId, ShiftStatus status);
     Optional<WorkShift> findByIdAndBranchId(Long id, Long branchId);
     List<WorkShift> findByBranchIdOrderByOpenedAtDesc(Long branchId);
     List<WorkShift> findByBranchIdAndCashierIdOrderByOpenedAtDesc(Long branchId, Long cashierId);
+    List<WorkShift> findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(
+            Long branchId, LocalDateTime fromInclusive, LocalDateTime toExclusive);
     boolean existsByCashierIdAndStatus(Long cashierId, ShiftStatus status);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
