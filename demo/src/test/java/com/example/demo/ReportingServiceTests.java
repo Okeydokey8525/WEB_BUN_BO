@@ -5,6 +5,7 @@ import com.example.demo.dto.response.DailyRevenueSummary;
 import com.example.demo.dto.response.PaymentMethodSummary;
 import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.dto.response.TopDishSummary;
+import com.example.demo.dto.response.InventoryConsumptionSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.model.Branch;
@@ -14,10 +15,12 @@ import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.OrderItemRepository;
+import com.example.demo.repository.InventoryTransactionRepository;
 import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
 import com.example.demo.repository.projection.DailyRevenueProjection;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
 import com.example.demo.repository.projection.TopDishProjection;
+import com.example.demo.repository.projection.InventoryConsumptionProjection;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
 import com.example.demo.service.ReportingService;
@@ -52,6 +55,8 @@ class ReportingServiceTests {
     private PaymentTransactionRepository paymentTransactionRepository;
     @Mock
     private OrderItemRepository orderItemRepository;
+    @Mock
+    private InventoryTransactionRepository inventoryTransactionRepository;
     @Mock
     private CurrentUserService currentUserService;
     @Mock
@@ -593,6 +598,43 @@ class ReportingServiceTests {
         assertEquals(7, pageable.getValue().getPageSize());
     }
 
+    @Test
+    void mapsInventoryConsumptionReversalNetAndWaste() {
+        stubConsumption(consumptionProjection(1L, "Gao", "kg", "15", "3", "2"));
+        InventoryConsumptionSummary summary = reportingService.getInventoryConsumption(singleDayFilter(), 10).get(0);
+        assertEquals(1L, summary.inventoryItemId()); assertEquals("Gao", summary.inventoryItemName());
+        assertEquals("kg", summary.unit()); assertEquals(new BigDecimal("15"), summary.consumedQuantity());
+        assertEquals(new BigDecimal("3"), summary.reversedQuantity()); assertEquals(new BigDecimal("12"), summary.netConsumedQuantity());
+        assertEquals(new BigDecimal("2"), summary.wasteQuantity());
+    }
+
+    @Test
+    void preservesNegativeInventoryNetAndNormalizesNulls() {
+        stubConsumption(consumptionProjection(1L, "Gao", "kg", "1", "3", "0"));
+        assertEquals(new BigDecimal("-2"), reportingService.getInventoryConsumption(singleDayFilter(), 1).get(0).netConsumedQuantity());
+        InventoryConsumptionProjection empty = mock(InventoryConsumptionProjection.class); when(empty.getInventoryItemName()).thenReturn("Empty");
+        stubConsumption(empty);
+        InventoryConsumptionSummary zero = reportingService.getInventoryConsumption(singleDayFilter(), 1).get(0);
+        assertEquals(BigDecimal.ZERO, zero.netConsumedQuantity()); assertEquals(BigDecimal.ZERO, zero.wasteQuantity());
+    }
+
+    @Test
+    void inventoryConsumptionValidatesLimitsAndAccess() {
+        assertThrows(BusinessValidationException.class, () -> reportingService.getInventoryConsumption(singleDayFilter(), 0));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getInventoryConsumption(singleDayFilter(), 101));
+        admin = user("ROLE_CASHIER", admin.getBranch()); when(currentUserService.getCurrentUser()).thenReturn(admin);
+        assertThrows(BranchAccessDeniedException.class, () -> reportingService.getInventoryConsumption(singleDayFilter(), 1));
+        verify(inventoryTransactionRepository, never()).aggregateConsumptionByBranchAndCreatedAt(anyLong(), any(), any(), any());
+    }
+
+    @Test
+    void inventoryConsumptionUsesScopedBranchBoundsAndPageLimit() {
+        stubConsumption(); reportingService.getInventoryConsumption(threeDayFilter(), 7);
+        ArgumentCaptor<Long> id = ArgumentCaptor.forClass(Long.class); ArgumentCaptor<LocalDateTime> from = ArgumentCaptor.forClass(LocalDateTime.class); ArgumentCaptor<LocalDateTime> to = ArgumentCaptor.forClass(LocalDateTime.class); ArgumentCaptor<Pageable> page = ArgumentCaptor.forClass(Pageable.class);
+        verify(inventoryTransactionRepository).aggregateConsumptionByBranchAndCreatedAt(id.capture(), from.capture(), to.capture(), page.capture());
+        assertEquals(10L, id.getValue()); assertEquals(LocalDateTime.of(2026, 7, 1, 0, 0), from.getValue()); assertEquals(LocalDateTime.of(2026, 7, 4, 0, 0), to.getValue()); assertEquals(7, page.getValue().getPageSize());
+    }
+
     private void assertDeniedRole(String roleName) {
         admin = user(roleName, admin.getBranch());
         when(currentUserService.getCurrentUser()).thenReturn(admin);
@@ -663,6 +705,17 @@ class ReportingServiceTests {
         when(projection.getQuantitySold()).thenReturn(quantity);
         when(projection.getRevenue()).thenReturn(new BigDecimal(revenue));
         when(projection.getOrderCount()).thenReturn(orders);
+        return projection;
+    }
+
+    private void stubConsumption(InventoryConsumptionProjection... projections) {
+        when(inventoryTransactionRepository.aggregateConsumptionByBranchAndCreatedAt(anyLong(), any(), any(), any(Pageable.class))).thenReturn(List.of(projections));
+    }
+
+    private InventoryConsumptionProjection consumptionProjection(Long id, String name, String unit, String consumed, String reversed, String waste) {
+        InventoryConsumptionProjection projection = mock(InventoryConsumptionProjection.class);
+        when(projection.getInventoryItemId()).thenReturn(id); when(projection.getInventoryItemName()).thenReturn(name); when(projection.getUnit()).thenReturn(unit);
+        when(projection.getConsumedQuantity()).thenReturn(new BigDecimal(consumed)); when(projection.getReversedQuantity()).thenReturn(new BigDecimal(reversed)); when(projection.getWasteQuantity()).thenReturn(new BigDecimal(waste));
         return projection;
     }
 
