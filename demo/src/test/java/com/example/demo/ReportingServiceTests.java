@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import com.example.demo.dto.request.ReportFilterRequest;
+import com.example.demo.dto.response.DailyRevenueSummary;
 import com.example.demo.dto.response.PaymentMethodSummary;
 import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
@@ -12,6 +13,7 @@ import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
+import com.example.demo.repository.projection.DailyRevenueProjection;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
@@ -373,6 +375,123 @@ class ReportingServiceTests {
         assertEquals(LocalDateTime.of(2026, 8, 1, 0, 0), to.getValue());
     }
 
+    @Test
+    void mapsDailyGrossRefundNetCountAndAverage() {
+        stubDailyAggregates(dailyProjection(LocalDate.of(2026, 7, 1), "200000", "50000", 2L));
+
+        DailyRevenueSummary summary = reportingService.getDailyRevenue(singleDayFilter()).get(0);
+        
+        assertEquals(LocalDate.of(2026, 7, 1), summary.date());
+        assertEquals(new BigDecimal("200000"), summary.grossSales());
+        assertEquals(new BigDecimal("50000"), summary.refundTotal());
+        assertEquals(new BigDecimal("150000"), summary.netRevenue());
+        assertEquals(2L, summary.paidOrderCount());
+        assertEquals(new BigDecimal("75000"), summary.averageOrderValue());
+    }
+
+    @Test
+    void roundsDailyAverageHalfUp() {
+        stubDailyAggregates(dailyProjection(LocalDate.of(2026, 7, 1), "101", "0", 2L));
+
+        assertEquals(new BigDecimal("51"), reportingService.getDailyRevenue(singleDayFilter()).get(0).averageOrderValue());
+    }
+
+    @Test
+    void preservesNegativeDailyNetAndUsesZeroAverageWithoutPaidOrders() {
+        stubDailyAggregates(dailyProjection(LocalDate.of(2026, 7, 1), "0", "50000", 0L));
+
+        DailyRevenueSummary summary = reportingService.getDailyRevenue(singleDayFilter()).get(0);
+
+        assertEquals(new BigDecimal("-50000"), summary.netRevenue());
+        assertEquals(BigDecimal.ZERO, summary.averageOrderValue());
+    }
+
+    @Test
+    void normalizesNullDailyProjectionFieldsToZero() {
+        DailyRevenueProjection projection = mock(DailyRevenueProjection.class);
+        when(projection.getRevenueDate()).thenReturn(LocalDate.of(2026, 7, 1));
+        stubDailyAggregates(projection);
+
+        DailyRevenueSummary summary = reportingService.getDailyRevenue(singleDayFilter()).get(0);
+
+        assertEquals(BigDecimal.ZERO, summary.grossSales());
+        assertEquals(BigDecimal.ZERO, summary.refundTotal());
+        assertEquals(BigDecimal.ZERO, summary.netRevenue());
+        assertEquals(0L, summary.paidOrderCount());
+        assertEquals(BigDecimal.ZERO, summary.averageOrderValue());
+    }
+
+    @Test
+    void emptyDailyAggregateZeroFillsEntireRange() {
+        stubDailyAggregates();
+
+        List<DailyRevenueSummary> summaries = reportingService.getDailyRevenue(threeDayFilter());
+
+        assertEquals(List.of(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 3)),
+                summaries.stream().map(DailyRevenueSummary::date).toList());
+        summaries.forEach(summary -> assertEquals(BigDecimal.ZERO, summary.netRevenue()));
+    }
+
+    @Test
+    void fillsMissingMiddleDayWithZero() {
+        stubDailyAggregates(
+                dailyProjection(LocalDate.of(2026, 7, 1), "100", "0", 1L),
+                dailyProjection(LocalDate.of(2026, 7, 3), "0", "50", 0L));
+
+        List<DailyRevenueSummary> summaries = reportingService.getDailyRevenue(threeDayFilter());
+
+        assertEquals(new BigDecimal("100"), summaries.get(0).netRevenue());
+        assertEquals(BigDecimal.ZERO, summaries.get(1).netRevenue());
+        assertEquals(new BigDecimal("-50"), summaries.get(2).netRevenue());
+    }
+
+    @Test
+    void dailyResultIsAlwaysAscendingEvenWhenProjectionOrderIsNot() {
+        stubDailyAggregates(
+                dailyProjection(LocalDate.of(2026, 7, 3), "30", "0", 1L),
+                dailyProjection(LocalDate.of(2026, 7, 1), "10", "0", 1L));
+
+        assertEquals(List.of(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 3)),
+                reportingService.getDailyRevenue(threeDayFilter()).stream().map(DailyRevenueSummary::date).toList());
+    }
+
+    @Test
+    void dailyRevenueRequiresAdminAndCurrentBranch() {
+        admin = user("ROLE_CASHIER", admin.getBranch());
+        when(currentUserService.getCurrentUser()).thenReturn(admin);
+        assertThrows(BranchAccessDeniedException.class, () -> reportingService.getDailyRevenue(singleDayFilter()));
+        verify(paymentTransactionRepository, never()).aggregateDailyRevenueByBranchAndCompletedAt(anyLong(), any(), any());
+
+        admin = user("ROLE_ADMIN", admin.getBranch());
+        when(currentUserService.getCurrentUser()).thenReturn(admin);
+        when(branchAccessService.requireScopedBranchId()).thenThrow(new BranchAccessDeniedException("No branch"));
+        assertThrows(BranchAccessDeniedException.class, () -> reportingService.getDailyRevenue(singleDayFilter()));
+    }
+
+    @Test
+    void dailyRevenueRejectsInvalidFilterBeforeRepositoryAccess() {
+        assertThrows(BusinessValidationException.class, () -> reportingService.getDailyRevenue(null));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getDailyRevenue(
+                new ReportFilterRequest(LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 1))));
+        verify(paymentTransactionRepository, never()).aggregateDailyRevenueByBranchAndCompletedAt(anyLong(), any(), any());
+    }
+
+    @Test
+    void dailyRevenueUsesCurrentBranchAndInclusiveExclusiveDayBoundsOnce() {
+        stubDailyAggregates();
+
+        reportingService.getDailyRevenue(threeDayFilter());
+
+        ArgumentCaptor<Long> branchId = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<LocalDateTime> from = ArgumentCaptor.forClass(LocalDateTime.class);
+        ArgumentCaptor<LocalDateTime> to = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(paymentTransactionRepository).aggregateDailyRevenueByBranchAndCompletedAt(
+                branchId.capture(), from.capture(), to.capture());
+        assertEquals(10L, branchId.getValue());
+        assertEquals(LocalDateTime.of(2026, 7, 1, 0, 0), from.getValue());
+        assertEquals(LocalDateTime.of(2026, 7, 4, 0, 0), to.getValue());
+    }
+
     private void assertDeniedRole(String roleName) {
         admin = user(roleName, admin.getBranch());
         when(currentUserService.getCurrentUser()).thenReturn(admin);
@@ -415,6 +534,28 @@ class ReportingServiceTests {
         when(projection.getRefundTransactionCount()).thenReturn(refundCount);
         when(projection.getPaidOrderCount()).thenReturn(paidOrderCount);
         return projection;
+    }
+
+    private void stubDailyAggregates(DailyRevenueProjection... projections) {
+        when(paymentTransactionRepository.aggregateDailyRevenueByBranchAndCompletedAt(anyLong(), any(), any()))
+                .thenReturn(List.of(projections));
+    }
+
+    private DailyRevenueProjection dailyProjection(LocalDate date, String gross, String refund, Long paidOrderCount) {
+        DailyRevenueProjection projection = mock(DailyRevenueProjection.class);
+        when(projection.getRevenueDate()).thenReturn(date);
+        when(projection.getGrossSales()).thenReturn(new BigDecimal(gross));
+        when(projection.getRefundTotal()).thenReturn(new BigDecimal(refund));
+        when(projection.getPaidOrderCount()).thenReturn(paidOrderCount);
+        return projection;
+    }
+
+    private ReportFilterRequest singleDayFilter() {
+        return new ReportFilterRequest(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 1));
+    }
+
+    private ReportFilterRequest threeDayFilter() {
+        return new ReportFilterRequest(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 3));
     }
 
     private User user(String roleName, Branch branch) {
