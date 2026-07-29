@@ -10,6 +10,8 @@ import com.example.demo.model.Recipe;
 import com.example.demo.model.RecipeItem;
 import com.example.demo.model.User;
 import com.example.demo.model.enums.InventoryTransactionType;
+import com.example.demo.model.enums.AuditAction;
+import com.example.demo.model.enums.AuditEntityType;
 import com.example.demo.repository.InventoryRepository;
 import com.example.demo.repository.InventoryTransactionRepository;
 import com.example.demo.repository.RecipeRepository;
@@ -34,6 +36,7 @@ public class InventoryService {
     private final RecipeRepository recipeRepository;
     private final BranchAccessService branchAccessService;
     private final CurrentUserService currentUserService;
+    private final AuditService auditService;
 
     public List<InventoryItem> listForCurrentBranch() {
         return inventoryRepository.findByBranchId(branchAccessService.requireScopedBranchId());
@@ -71,8 +74,12 @@ public class InventoryService {
         item.setQuantity(after);
         inventoryRepository.save(item);
 
-        return inventoryTransactionRepository.save(transaction(
+        InventoryTransaction saved = inventoryTransactionRepository.save(transaction(
                 item, InventoryTransactionType.STOCK_IN, quantity, before, after, null, null, reason));
+        auditService.record(AuditAction.STOCK_IN, AuditEntityType.INVENTORY_TRANSACTION, saved.getId(),
+                "Stock received", Map.of("inventoryItemId", item.getId(), "quantity", quantity,
+                        "beforeQuantity", before, "afterQuantity", after, "reason", reason));
+        return saved;
     }
 
     @Transactional
@@ -95,8 +102,12 @@ public class InventoryService {
         InventoryTransactionType type = adjustment.signum() > 0
                 ? InventoryTransactionType.ADJUSTMENT_IN
                 : InventoryTransactionType.ADJUSTMENT_OUT;
-        return inventoryTransactionRepository.save(transaction(
+        InventoryTransaction saved = inventoryTransactionRepository.save(transaction(
                 item, type, adjustment.abs(), before, after, null, null, reason));
+        auditService.record(AuditAction.STOCK_ADJUST, AuditEntityType.INVENTORY_TRANSACTION, saved.getId(),
+                "Stock adjusted", Map.of("inventoryItemId", item.getId(), "quantity", adjustment,
+                        "beforeQuantity", before, "afterQuantity", after, "reason", reason));
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -149,6 +160,8 @@ public class InventoryService {
                     change.before(), change.after(), ORDER_REFERENCE_TYPE, order.getId(),
                     "Order consumption")));
         }
+        auditService.record(AuditAction.ORDER_STOCK_CONSUMED, AuditEntityType.ORDER, order.getId(),
+                "Order stock consumed", Map.of("transactionCount", transactions.size()));
         return transactions;
     }
 
@@ -189,6 +202,8 @@ public class InventoryService {
                     change.before(), change.after(), ORDER_REFERENCE_TYPE, order.getId(),
                     "Order consumption reversal")));
         }
+        auditService.record(AuditAction.ORDER_STOCK_REVERSED, AuditEntityType.ORDER, order.getId(),
+                "Order stock reversed", Map.of("transactionCount", transactions.size()));
         return transactions;
     }
 
