@@ -7,6 +7,7 @@ import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.dto.response.TopDishSummary;
 import com.example.demo.dto.response.InventoryConsumptionSummary;
 import com.example.demo.dto.response.ShiftReportSummary;
+import com.example.demo.dto.response.ReportingDashboard;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.model.User;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ReportingService {
     private static final long MAX_REPORTING_DAYS = 366;
+    private static final int DEFAULT_DASHBOARD_LIMIT = 10;
 
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final OrderItemRepository orderItemRepository;
@@ -166,6 +168,27 @@ public class ReportingService {
                 .stream().map(this::toShiftReportSummary).toList();
     }
 
+    public ReportingDashboard getDashboard(ReportFilterRequest filter) {
+        return getDashboard(filter, DEFAULT_DASHBOARD_LIMIT, DEFAULT_DASHBOARD_LIMIT);
+    }
+
+    public ReportingDashboard getDashboard(ReportFilterRequest filter, int topDishLimit, int inventoryLimit) {
+        validateFilter(filter);
+        validateDashboardLimit(topDishLimit, "So luong mon top phai nam trong khoang tu 1 den 100.");
+        validateDashboardLimit(inventoryLimit, "So luong nguyen lieu phai nam trong khoang tu 1 den 100.");
+
+        RevenueSummary revenueSummary = getRevenueSummary(filter);
+        List<PaymentMethodSummary> paymentMethods = getPaymentMethodBreakdown(filter);
+        List<DailyRevenueSummary> dailyRevenue = getDailyRevenue(filter);
+        List<TopDishSummary> topDishes = getTopDishes(filter, topDishLimit);
+        List<InventoryConsumptionSummary> inventoryConsumption = getInventoryConsumption(filter, inventoryLimit);
+        List<ShiftReportSummary> shiftReports = getShiftReports(filter);
+
+        return new ReportingDashboard(filter.fromDate(), filter.toDate(), revenueSummary, paymentMethods,
+                dailyRevenue, topDishes, inventoryConsumption, shiftReports, topDishLimit, inventoryLimit,
+                LocalDateTime.now());
+    }
+
     private Long requireAdminBranchId() {
         User actor = currentUserService.getCurrentUser();
         if (actor.getRole() == null || !"ROLE_ADMIN".equals(actor.getRole().getName())) {
@@ -185,6 +208,12 @@ public class ReportingService {
         }
         if (ChronoUnit.DAYS.between(fromDate, toDate) >= MAX_REPORTING_DAYS) {
             throw new BusinessValidationException("Khoang thoi gian bao cao khong duoc qua 366 ngay.");
+        }
+    }
+
+    private void validateDashboardLimit(int limit, String message) {
+        if (limit < 1 || limit > 100) {
+            throw new BusinessValidationException(message);
         }
     }
 
