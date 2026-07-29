@@ -16,6 +16,7 @@ import com.example.demo.model.enums.OrderItemStatus;
 import com.example.demo.model.enums.OrderStatus;
 import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentStatus;
+import com.example.demo.model.enums.ShiftStatus;
 import com.example.demo.model.enums.TableStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -48,6 +49,7 @@ class BranchSecurityIntegrationTests {
     @Autowired InventoryRepository inventoryRepository;
     @Autowired OrderRepository orderRepository;
     @Autowired OrderItemRepository orderItemRepository;
+    @Autowired WorkShiftRepository workShiftRepository;
     @Autowired PasswordEncoder passwordEncoder;
 
     private Branch branchA;
@@ -62,6 +64,7 @@ class BranchSecurityIntegrationTests {
     private Order orderB;
     private OrderItem itemA;
     private OrderItem itemB;
+    private User cashierA;
 
     @BeforeEach
     void setUp() {
@@ -75,7 +78,7 @@ class BranchSecurityIntegrationTests {
         userRepository.save(persistUser("admin-b", admin, branchB));
         userRepository.save(persistUser("inventory-a", inventory, branchA));
         userRepository.save(persistUser("kitchen-a", kitchen, branchA));
-        userRepository.save(persistUser("cashier-a", cashier, branchA));
+        cashierA = userRepository.save(persistUser("cashier-a", cashier, branchA));
         userRepository.save(persistUser("cashier-b", cashier, branchB));
 
         dishA = dishRepository.save(dish("Dish A", branchA));
@@ -303,6 +306,7 @@ class BranchSecurityIntegrationTests {
 
     @Test
     void cashierCanPayOnlyOrdersInOwnBranch() throws Exception {
+        workShiftRepository.save(openShift(cashierA, branchA));
         mockMvc.perform(post("/cashier/orders/{id}/pay", orderA.getId())
                         .with(user("cashier-a").roles("CASHIER")).with(csrf())
                         .param("paymentMethod", "CASH").param("amountTendered", "10000"))
@@ -401,5 +405,15 @@ class BranchSecurityIntegrationTests {
         item.setLineTotal(dish.getPrice());
         item.setStatus(OrderItemStatus.PENDING);
         return item;
+    }
+
+    private WorkShift openShift(User cashier, Branch branch) {
+        WorkShift shift = new WorkShift();
+        shift.setBranch(branch); shift.setCashier(cashier); shift.setStatus(ShiftStatus.OPEN);
+        shift.setOpenedAt(LocalDateTime.now()); shift.setOpenedBy(cashier); shift.setOpeningCash(BigDecimal.ZERO);
+        shift.setExpectedCash(BigDecimal.ZERO); shift.setActualCash(BigDecimal.ZERO); shift.setCashDifference(BigDecimal.ZERO);
+        shift.setTotalSales(BigDecimal.ZERO); shift.setCashSales(BigDecimal.ZERO); shift.setTransferSales(BigDecimal.ZERO);
+        shift.setCardSales(BigDecimal.ZERO); shift.setRefundTotal(BigDecimal.ZERO); shift.setOrderCount(0);
+        return shift;
     }
 }
