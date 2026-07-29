@@ -6,16 +6,20 @@ import com.example.demo.dto.response.PaymentMethodSummary;
 import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.dto.response.TopDishSummary;
 import com.example.demo.dto.response.InventoryConsumptionSummary;
+import com.example.demo.dto.response.ShiftReportSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.model.Branch;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
+import com.example.demo.model.WorkShift;
 import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentTransactionStatus;
+import com.example.demo.model.enums.ShiftStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.OrderItemRepository;
 import com.example.demo.repository.InventoryTransactionRepository;
+import com.example.demo.repository.WorkShiftRepository;
 import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
 import com.example.demo.repository.projection.DailyRevenueProjection;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
@@ -39,6 +43,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -57,6 +62,8 @@ class ReportingServiceTests {
     private OrderItemRepository orderItemRepository;
     @Mock
     private InventoryTransactionRepository inventoryTransactionRepository;
+    @Mock
+    private WorkShiftRepository workShiftRepository;
     @Mock
     private CurrentUserService currentUserService;
     @Mock
@@ -635,6 +642,86 @@ class ReportingServiceTests {
         assertEquals(10L, id.getValue()); assertEquals(LocalDateTime.of(2026, 7, 1, 0, 0), from.getValue()); assertEquals(LocalDateTime.of(2026, 7, 4, 0, 0), to.getValue()); assertEquals(7, page.getValue().getPageSize());
     }
 
+    @Test
+    void mapsClosedShiftSnapshotsAndPreservesNegativeCashDifference() {
+        WorkShift shift = reportShift(41L, admin, ShiftStatus.CLOSED, LocalDateTime.of(2026, 7, 2, 8, 0));
+        shift.setClosedAt(LocalDateTime.of(2026, 7, 2, 16, 0));
+        shift.setOpeningCash(new BigDecimal("500000"));
+        shift.setExpectedCash(new BigDecimal("1500000"));
+        shift.setActualCash(new BigDecimal("1480000"));
+        shift.setCashDifference(new BigDecimal("-20000"));
+        shift.setTotalSales(new BigDecimal("1200000"));
+        shift.setCashSales(new BigDecimal("1000000"));
+        shift.setTransferSales(new BigDecimal("200000"));
+        shift.setCardSales(BigDecimal.ZERO);
+        shift.setRefundTotal(new BigDecimal("50000"));
+        shift.setOrderCount(20);
+        shift.setNote("Đã đối soát");
+        when(workShiftRepository.findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any()))
+                .thenReturn(List.of(shift));
+
+        ShiftReportSummary summary = reportingService.getShiftReports(filter).get(0);
+
+        assertEquals(41L, summary.shiftId());
+        assertEquals("admin-a", summary.cashierUsername());
+        assertEquals(ShiftStatus.CLOSED, summary.status());
+        assertEquals(new BigDecimal("-20000"), summary.cashDifference());
+        assertEquals(new BigDecimal("1200000"), summary.totalSales());
+        assertEquals(20L, summary.orderCount());
+        assertEquals("Đã đối soát", summary.note());
+    }
+
+    @Test
+    void keepsOpenShiftActualCashNullAndNormalizesNullSnapshots() {
+        WorkShift shift = reportShift(42L, admin, ShiftStatus.OPEN, LocalDateTime.of(2026, 7, 2, 8, 0));
+        shift.setOpeningCash(null);
+        shift.setExpectedCash(null);
+        shift.setActualCash(null);
+        shift.setCashDifference(null);
+        shift.setTotalSales(null);
+        shift.setCashSales(null);
+        shift.setTransferSales(null);
+        shift.setCardSales(null);
+        shift.setRefundTotal(null);
+        when(workShiftRepository.findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any()))
+                .thenReturn(List.of(shift));
+
+        ShiftReportSummary summary = reportingService.getShiftReports(filter).get(0);
+
+        assertNull(summary.actualCash());
+        assertEquals(BigDecimal.ZERO, summary.openingCash());
+        assertEquals(BigDecimal.ZERO, summary.expectedCash());
+        assertEquals(BigDecimal.ZERO, summary.totalSales());
+        assertEquals(BigDecimal.ZERO, summary.refundTotal());
+    }
+
+    @Test
+    void returnsEmptyListAndUsesScopedBranchInclusiveExclusiveBounds() {
+        when(workShiftRepository.findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any()))
+                .thenReturn(List.of());
+
+        assertEquals(List.of(), reportingService.getShiftReports(filter));
+
+        ArgumentCaptor<Long> branchId = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<LocalDateTime> from = ArgumentCaptor.forClass(LocalDateTime.class);
+        ArgumentCaptor<LocalDateTime> to = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(workShiftRepository).findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(
+                branchId.capture(), from.capture(), to.capture());
+        assertEquals(10L, branchId.getValue());
+        assertEquals(LocalDateTime.of(2026, 7, 1, 0, 0), from.getValue());
+        assertEquals(LocalDateTime.of(2026, 8, 1, 0, 0), to.getValue());
+    }
+
+    @Test
+    void shiftReportsRequireAdminAndValidFilterBeforeRepositoryAccess() {
+        admin = user("ROLE_CASHIER", admin.getBranch());
+        when(currentUserService.getCurrentUser()).thenReturn(admin);
+
+        assertThrows(BranchAccessDeniedException.class, () -> reportingService.getShiftReports(filter));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getShiftReports(null));
+        verify(workShiftRepository, never()).findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any());
+    }
+
     private void assertDeniedRole(String roleName) {
         admin = user(roleName, admin.getBranch());
         when(currentUserService.getCurrentUser()).thenReturn(admin);
@@ -736,5 +823,15 @@ class ReportingServiceTests {
         user.setRole(role);
         user.setBranch(branch);
         return user;
+    }
+
+    private WorkShift reportShift(Long id, User cashier, ShiftStatus status, LocalDateTime openedAt) {
+        WorkShift shift = new WorkShift();
+        shift.setId(id);
+        shift.setBranch(cashier.getBranch());
+        shift.setCashier(cashier);
+        shift.setStatus(status);
+        shift.setOpenedAt(openedAt);
+        return shift;
     }
 }
