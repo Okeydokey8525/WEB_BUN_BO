@@ -4,6 +4,7 @@ import com.example.demo.dto.request.ReportFilterRequest;
 import com.example.demo.dto.response.DailyRevenueSummary;
 import com.example.demo.dto.response.PaymentMethodSummary;
 import com.example.demo.dto.response.RevenueSummary;
+import com.example.demo.dto.response.TopDishSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.model.Branch;
@@ -12,9 +13,11 @@ import com.example.demo.model.User;
 import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
+import com.example.demo.repository.OrderItemRepository;
 import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
 import com.example.demo.repository.projection.DailyRevenueProjection;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
+import com.example.demo.repository.projection.TopDishProjection;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
 import com.example.demo.service.ReportingService;
@@ -25,6 +28,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -46,6 +50,8 @@ import static org.mockito.Mockito.when;
 class ReportingServiceTests {
     @Mock
     private PaymentTransactionRepository paymentTransactionRepository;
+    @Mock
+    private OrderItemRepository orderItemRepository;
     @Mock
     private CurrentUserService currentUserService;
     @Mock
@@ -492,6 +498,101 @@ class ReportingServiceTests {
         assertEquals(LocalDateTime.of(2026, 7, 4, 0, 0), to.getValue());
     }
 
+    @Test
+    void mapsTopDishSnapshotFieldsAndPreservesRepositoryOrder() {
+        stubTopDishes(
+                topDishProjection(1L, "Bun bo", 5L, "250000", 2L),
+                topDishProjection(2L, "Pho", 4L, "180000", 1L));
+
+        List<TopDishSummary> summaries = reportingService.getTopDishes(singleDayFilter(), 10);
+
+        assertEquals(List.of("Bun bo", "Pho"), summaries.stream().map(TopDishSummary::dishName).toList());
+        TopDishSummary bunBo = summaries.get(0);
+        assertEquals(1L, bunBo.dishId());
+        assertEquals(5L, bunBo.quantitySold());
+        assertEquals(new BigDecimal("250000"), bunBo.revenue());
+        assertEquals(2L, bunBo.orderCount());
+    }
+
+    @Test
+    void normalizesNullTopDishProjectionNumbers() {
+        TopDishProjection projection = mock(TopDishProjection.class);
+        when(projection.getDishName()).thenReturn("Unknown");
+        stubTopDishes(projection);
+
+        TopDishSummary summary = reportingService.getTopDishes(singleDayFilter(), 1).get(0);
+
+        assertEquals(0L, summary.quantitySold());
+        assertEquals(BigDecimal.ZERO, summary.revenue());
+        assertEquals(0L, summary.orderCount());
+    }
+
+    @Test
+    void emptyTopDishAggregateReturnsEmptyList() {
+        stubTopDishes();
+
+        assertEquals(List.of(), reportingService.getTopDishes(singleDayFilter(), 1));
+    }
+
+    @Test
+    void acceptsMinimumAndMaximumTopDishLimits() {
+        stubTopDishes();
+
+        reportingService.getTopDishes(singleDayFilter(), 1);
+        reportingService.getTopDishes(singleDayFilter(), 100);
+
+        verify(orderItemRepository, org.mockito.Mockito.times(2))
+                .aggregateTopDishesByBranchAndPaidAt(anyLong(), any(), any(), any(Pageable.class));
+    }
+
+    @Test
+    void rejectsInvalidTopDishLimitsBeforeRepositoryAccess() {
+        assertThrows(BusinessValidationException.class, () -> reportingService.getTopDishes(singleDayFilter(), 0));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getTopDishes(singleDayFilter(), -1));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getTopDishes(singleDayFilter(), 101));
+        verify(orderItemRepository, never()).aggregateTopDishesByBranchAndPaidAt(anyLong(), any(), any(), any());
+    }
+
+    @Test
+    void topDishesRequireAdminAndCurrentBranch() {
+        admin = user("ROLE_CASHIER", admin.getBranch());
+        when(currentUserService.getCurrentUser()).thenReturn(admin);
+        assertThrows(BranchAccessDeniedException.class, () -> reportingService.getTopDishes(singleDayFilter(), 1));
+        verify(orderItemRepository, never()).aggregateTopDishesByBranchAndPaidAt(anyLong(), any(), any(), any());
+
+        admin = user("ROLE_ADMIN", admin.getBranch());
+        when(currentUserService.getCurrentUser()).thenReturn(admin);
+        when(branchAccessService.requireScopedBranchId()).thenThrow(new BranchAccessDeniedException("No branch"));
+        assertThrows(BranchAccessDeniedException.class, () -> reportingService.getTopDishes(singleDayFilter(), 1));
+    }
+
+    @Test
+    void topDishesRejectInvalidFilterBeforeRepositoryAccess() {
+        assertThrows(BusinessValidationException.class, () -> reportingService.getTopDishes(null, 1));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getTopDishes(
+                new ReportFilterRequest(LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 1)), 1));
+        verify(orderItemRepository, never()).aggregateTopDishesByBranchAndPaidAt(anyLong(), any(), any(), any());
+    }
+
+    @Test
+    void topDishesUsesScopedBranchDateBoundsAndDatabaseLimit() {
+        stubTopDishes();
+
+        reportingService.getTopDishes(threeDayFilter(), 7);
+
+        ArgumentCaptor<Long> branchId = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<LocalDateTime> from = ArgumentCaptor.forClass(LocalDateTime.class);
+        ArgumentCaptor<LocalDateTime> to = ArgumentCaptor.forClass(LocalDateTime.class);
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(orderItemRepository).aggregateTopDishesByBranchAndPaidAt(
+                branchId.capture(), from.capture(), to.capture(), pageable.capture());
+        assertEquals(10L, branchId.getValue());
+        assertEquals(LocalDateTime.of(2026, 7, 1, 0, 0), from.getValue());
+        assertEquals(LocalDateTime.of(2026, 7, 4, 0, 0), to.getValue());
+        assertEquals(0, pageable.getValue().getPageNumber());
+        assertEquals(7, pageable.getValue().getPageSize());
+    }
+
     private void assertDeniedRole(String roleName) {
         admin = user(roleName, admin.getBranch());
         when(currentUserService.getCurrentUser()).thenReturn(admin);
@@ -547,6 +648,21 @@ class ReportingServiceTests {
         when(projection.getGrossSales()).thenReturn(new BigDecimal(gross));
         when(projection.getRefundTotal()).thenReturn(new BigDecimal(refund));
         when(projection.getPaidOrderCount()).thenReturn(paidOrderCount);
+        return projection;
+    }
+
+    private void stubTopDishes(TopDishProjection... projections) {
+        when(orderItemRepository.aggregateTopDishesByBranchAndPaidAt(anyLong(), any(), any(), any(Pageable.class)))
+                .thenReturn(List.of(projections));
+    }
+
+    private TopDishProjection topDishProjection(Long dishId, String name, Long quantity, String revenue, Long orders) {
+        TopDishProjection projection = mock(TopDishProjection.class);
+        when(projection.getDishId()).thenReturn(dishId);
+        when(projection.getDishName()).thenReturn(name);
+        when(projection.getQuantitySold()).thenReturn(quantity);
+        when(projection.getRevenue()).thenReturn(new BigDecimal(revenue));
+        when(projection.getOrderCount()).thenReturn(orders);
         return projection;
     }
 
