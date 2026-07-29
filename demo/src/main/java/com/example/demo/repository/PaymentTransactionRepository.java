@@ -4,12 +4,14 @@ import com.example.demo.model.PaymentTransaction;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.model.enums.PaymentTransactionType;
 import com.example.demo.repository.projection.ShiftPaymentAggregate;
+import com.example.demo.repository.projection.RevenueAggregateProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.time.LocalDateTime;
 
 public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, Long> {
     List<PaymentTransaction> findByOrderIdAndBranchIdOrderByCreatedAtAsc(Long orderId, Long branchId);
@@ -40,4 +42,16 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             + "from payment_transactions t where t.work_shift_id = :shiftId and t.status = 'COMPLETED'",
             nativeQuery = true)
     ShiftPaymentAggregate aggregateCompletedTransactionsByShiftId(@Param("shiftId") Long shiftId);
+
+    @Query("select "
+            + "coalesce(sum(case when t.transactionType = com.example.demo.model.enums.PaymentTransactionType.PAYMENT then t.amount else 0 end), 0) as grossSales, "
+            + "coalesce(sum(case when t.transactionType = com.example.demo.model.enums.PaymentTransactionType.REFUND then t.amount else 0 end), 0) as refundTotal, "
+            + "count(distinct case when t.transactionType = com.example.demo.model.enums.PaymentTransactionType.PAYMENT then t.order.id else null end) as paidOrderCount "
+            + "from PaymentTransaction t where t.branch.id = :branchId and t.status = :status "
+            + "and t.completedAt >= :fromInclusive and t.completedAt < :toExclusive")
+    RevenueAggregateProjection aggregateRevenueByBranchAndCompletedAt(
+            @Param("branchId") Long branchId,
+            @Param("fromInclusive") LocalDateTime fromInclusive,
+            @Param("toExclusive") LocalDateTime toExclusive,
+            @Param("status") PaymentTransactionStatus status);
 }
