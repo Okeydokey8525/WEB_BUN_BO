@@ -15,6 +15,8 @@ import com.example.demo.model.Branch;
 import com.example.demo.model.User;
 import com.example.demo.model.WorkShift;
 import com.example.demo.model.enums.ShiftStatus;
+import com.example.demo.model.enums.AuditAction;
+import com.example.demo.model.enums.AuditEntityType;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.WorkShiftRepository;
 import com.example.demo.repository.projection.ShiftPaymentAggregate;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -34,15 +37,17 @@ public class ShiftService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final CurrentUserService currentUserService;
     private final BranchAccessService branchAccessService;
+    private final AuditService auditService;
 
     public ShiftService(WorkShiftRepository workShiftRepository,
                         PaymentTransactionRepository paymentTransactionRepository,
                         CurrentUserService currentUserService,
-                        BranchAccessService branchAccessService) {
+                        BranchAccessService branchAccessService, AuditService auditService) {
         this.workShiftRepository = workShiftRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.currentUserService = currentUserService;
         this.branchAccessService = branchAccessService;
+        this.auditService = auditService;
     }
 
     public OpenShiftResult openShift(OpenShiftRequest request) {
@@ -66,6 +71,8 @@ public class ShiftService {
         shift.setTotalSales(BigDecimal.ZERO); shift.setCashSales(BigDecimal.ZERO); shift.setTransferSales(BigDecimal.ZERO);
         shift.setCardSales(BigDecimal.ZERO); shift.setRefundTotal(BigDecimal.ZERO); shift.setOrderCount(0);
         WorkShift saved = workShiftRepository.save(shift);
+        auditService.record(AuditAction.SHIFT_OPEN, AuditEntityType.WORK_SHIFT, saved.getId(), saved.getBranch(), actor,
+                "Shift opened", Map.of("openingCash", saved.getOpeningCash(), "status", saved.getStatus().name(), "cashierId", actor.getId(), "branchId", saved.getBranch().getId()));
         return new OpenShiftResult(toSummary(saved));
     }
 
@@ -117,6 +124,8 @@ public class ShiftService {
         shift.setClosedAt(LocalDateTime.now()); shift.setClosedBy(actor); shift.setStatus(ShiftStatus.CLOSED);
         if (request.note() != null && !request.note().isBlank()) shift.setNote(shift.getNote() == null || shift.getNote().isBlank() ? request.note() : shift.getNote() + " | Close: " + request.note());
         WorkShift saved = workShiftRepository.save(shift);
+        auditService.record(AuditAction.SHIFT_CLOSE, AuditEntityType.WORK_SHIFT, saved.getId(), saved.getBranch(), actor,
+                "Shift closed", Map.of("expectedCash", saved.getExpectedCash(), "actualCash", saved.getActualCash(), "cashDifference", saved.getCashDifference(), "totalSales", saved.getTotalSales(), "refundTotal", saved.getRefundTotal(), "orderCount", saved.getOrderCount()));
         return new CloseShiftResult(saved.getId(), saved.getStatus(), saved.getClosedAt(), saved.getExpectedCash(), saved.getActualCash(), saved.getCashDifference(), saved.getTotalSales(), saved.getCashSales(), saved.getTransferSales(), saved.getCardSales(), saved.getRefundTotal(), saved.getOrderCount());
     }
 

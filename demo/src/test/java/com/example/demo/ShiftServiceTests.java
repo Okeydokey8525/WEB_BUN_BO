@@ -19,6 +19,7 @@ import com.example.demo.repository.projection.ShiftPaymentAggregate;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
 import com.example.demo.service.ShiftService;
+import com.example.demo.service.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +43,7 @@ class ShiftServiceTests {
     @Mock PaymentTransactionRepository paymentTransactionRepository;
     @Mock CurrentUserService currentUserService;
     @Mock BranchAccessService branchAccessService;
+    @Mock AuditService auditService;
     @InjectMocks ShiftService shiftService;
 
     private Branch branch;
