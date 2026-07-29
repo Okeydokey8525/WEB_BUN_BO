@@ -20,6 +20,7 @@ import com.example.demo.repository.WorkShiftRepository;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
 import com.example.demo.service.PaymentService;
+import com.example.demo.service.AuditService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -41,6 +42,7 @@ class PaymentServiceTests {
     @Mock WorkShiftRepository workShiftRepository;
     @Mock CurrentUserService currentUserService;
     @Mock BranchAccessService branchAccessService;
+    @Mock AuditService auditService;
     @InjectMocks PaymentService paymentService;
 
     @Test
@@ -62,6 +64,7 @@ class PaymentServiceTests {
         verify(paymentTransactionRepository).save(captor.capture());
         assertEquals(new BigDecimal("100000"), captor.getValue().getAmount());
         assertSame(openShift, captor.getValue().getWorkShift());
+        verify(auditService).record(eq(com.example.demo.model.enums.AuditAction.PAY_ORDER), eq(com.example.demo.model.enums.AuditEntityType.PAYMENT_TRANSACTION), eq(11L), eq(order.getBranch()), eq(cashier), anyString(), argThat(metadata -> metadata.get("orderId").equals(7L) && metadata.get("shiftId").equals(openShift.getId()) && metadata.get("amount").equals(new BigDecimal("100000"))));
     }
 
     @Test

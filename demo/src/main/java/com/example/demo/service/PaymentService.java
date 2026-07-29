@@ -25,12 +25,15 @@ import com.example.demo.model.enums.PaymentStatus;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.model.enums.PaymentTransactionType;
 import com.example.demo.model.enums.ShiftStatus;
+import com.example.demo.model.enums.AuditAction;
+import com.example.demo.model.enums.AuditEntityType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -41,18 +44,21 @@ public class PaymentService {
     private final WorkShiftRepository workShiftRepository;
     private final CurrentUserService currentUserService;
     private final BranchAccessService branchAccessService;
+    private final AuditService auditService;
 
     public PaymentService(
             OrderRepository orderRepository,
             PaymentTransactionRepository paymentTransactionRepository,
             WorkShiftRepository workShiftRepository,
             CurrentUserService currentUserService,
-            BranchAccessService branchAccessService) {
+            BranchAccessService branchAccessService,
+            AuditService auditService) {
         this.orderRepository = orderRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.workShiftRepository = workShiftRepository;
         this.currentUserService = currentUserService;
         this.branchAccessService = branchAccessService;
+        this.auditService = auditService;
     }
 
     private Order requireOrderForCurrentBranch(Long orderId) {
@@ -112,6 +118,8 @@ public class PaymentService {
         transaction.setReferenceCode(request.referenceCode()); transaction.setNote(request.note());
         transaction.setStatus(PaymentTransactionStatus.COMPLETED); transaction.setCreatedAt(now); transaction.setCompletedAt(now);
         PaymentTransaction saved = paymentTransactionRepository.save(transaction);
+        auditService.record(AuditAction.PAY_ORDER, AuditEntityType.PAYMENT_TRANSACTION, saved.getId(), saved.getBranch(), actor,
+                "Order paid", Map.of("orderId", order.getId(), "shiftId", openShift.getId(), "amount", saved.getAmount(), "paymentMethod", saved.getPaymentMethod().name(), "transactionType", saved.getTransactionType().name()));
         order.setPaymentStatus(PaymentStatus.PAID); order.setPaymentMethod(request.paymentMethod());
         order.setPaidAt(now); order.setPaidBy(actor);
         orderRepository.saveAndFlush(order);
@@ -140,6 +148,8 @@ public class PaymentService {
         transaction.setAmount(paid); transaction.setStatus(PaymentTransactionStatus.COMPLETED);
         transaction.setNote(request.note()); transaction.setCreatedAt(now); transaction.setCompletedAt(now);
         PaymentTransaction saved = paymentTransactionRepository.save(transaction);
+        auditService.record(AuditAction.REFUND_ORDER, AuditEntityType.PAYMENT_TRANSACTION, saved.getId(), saved.getBranch(), actor,
+                "Order refunded", Map.of("orderId", order.getId(), "shiftId", openShift.getId(), "amount", saved.getAmount(), "paymentMethod", saved.getPaymentMethod().name(), "transactionType", saved.getTransactionType().name()));
         order.setPaymentStatus(PaymentStatus.REFUNDED);
         orderRepository.saveAndFlush(order);
         return new PaymentResult(saved.getId(), order.getId(), paid, BigDecimal.ZERO);
