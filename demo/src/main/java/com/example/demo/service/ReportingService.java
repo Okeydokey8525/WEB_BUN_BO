@@ -5,6 +5,7 @@ import com.example.demo.dto.response.DailyRevenueSummary;
 import com.example.demo.dto.response.PaymentMethodSummary;
 import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.dto.response.TopDishSummary;
+import com.example.demo.dto.response.InventoryConsumptionSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.model.User;
@@ -12,10 +13,12 @@ import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
 import com.example.demo.repository.OrderItemRepository;
+import com.example.demo.repository.InventoryTransactionRepository;
 import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
 import com.example.demo.repository.projection.DailyRevenueProjection;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
 import com.example.demo.repository.projection.TopDishProjection;
+import com.example.demo.repository.projection.InventoryConsumptionProjection;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
 import org.springframework.stereotype.Service;
@@ -41,15 +44,18 @@ public class ReportingService {
 
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final OrderItemRepository orderItemRepository;
+    private final InventoryTransactionRepository inventoryTransactionRepository;
     private final CurrentUserService currentUserService;
     private final BranchAccessService branchAccessService;
 
     public ReportingService(PaymentTransactionRepository paymentTransactionRepository,
                             OrderItemRepository orderItemRepository,
+                            InventoryTransactionRepository inventoryTransactionRepository,
                             CurrentUserService currentUserService,
                             BranchAccessService branchAccessService) {
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.orderItemRepository = orderItemRepository;
+        this.inventoryTransactionRepository = inventoryTransactionRepository;
         this.currentUserService = currentUserService;
         this.branchAccessService = branchAccessService;
     }
@@ -134,6 +140,18 @@ public class ReportingService {
                 .toList();
     }
 
+    public List<InventoryConsumptionSummary> getInventoryConsumption(ReportFilterRequest filter, int limit) {
+        validateFilter(filter);
+        if (limit < 1 || limit > 100) {
+            throw new BusinessValidationException("So luong nguyen lieu phai nam trong khoang tu 1 den 100.");
+        }
+        Long branchId = requireAdminBranchId();
+        List<InventoryConsumptionProjection> aggregates = inventoryTransactionRepository.aggregateConsumptionByBranchAndCreatedAt(
+                branchId, filter.fromDate().atStartOfDay(), filter.toDate().plusDays(1).atStartOfDay(), PageRequest.of(0, limit));
+        return (aggregates == null ? List.<InventoryConsumptionProjection>of() : aggregates).stream()
+                .filter(aggregate -> aggregate != null).map(this::toInventoryConsumptionSummary).toList();
+    }
+
     private Long requireAdminBranchId() {
         User actor = currentUserService.getCurrentUser();
         if (actor.getRole() == null || !"ROLE_ADMIN".equals(actor.getRole().getName())) {
@@ -201,5 +219,12 @@ public class ReportingService {
         long orderCount = aggregate.getOrderCount() == null ? 0L : aggregate.getOrderCount();
         return new TopDishSummary(aggregate.getDishId(), aggregate.getDishName(), quantitySold,
                 zero(aggregate.getRevenue()), orderCount);
+    }
+
+    private InventoryConsumptionSummary toInventoryConsumptionSummary(InventoryConsumptionProjection aggregate) {
+        BigDecimal consumed = zero(aggregate.getConsumedQuantity());
+        BigDecimal reversed = zero(aggregate.getReversedQuantity());
+        return new InventoryConsumptionSummary(aggregate.getInventoryItemId(), aggregate.getInventoryItemName(), aggregate.getUnit(),
+                consumed, reversed, consumed.subtract(reversed), zero(aggregate.getWasteQuantity()));
     }
 }
