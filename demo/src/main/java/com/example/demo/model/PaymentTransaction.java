@@ -29,6 +29,10 @@ public class PaymentTransaction {
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "work_shift_id")
+    private WorkShift workShift;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "transaction_type", nullable = false, length = 20)
     private PaymentTransactionType transactionType;

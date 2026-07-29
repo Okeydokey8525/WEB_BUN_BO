@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.PaymentTransactionRepository;
+import com.example.demo.repository.WorkShiftRepository;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
 import com.example.demo.exception.ResourceNotFoundException;
@@ -9,9 +10,12 @@ import com.example.demo.exception.InvalidPaymentAmountException;
 import com.example.demo.exception.OrderAlreadyPaidException;
 import com.example.demo.exception.PaymentNotAllowedException;
 import com.example.demo.exception.RefundNotAllowedException;
+import com.example.demo.exception.ShiftAccessDeniedException;
+import com.example.demo.exception.ShiftNotOpenException;
 import com.example.demo.model.Order;
 import com.example.demo.model.PaymentTransaction;
 import com.example.demo.model.User;
+import com.example.demo.model.WorkShift;
 import com.example.demo.dto.request.PayOrderRequest;
 import com.example.demo.dto.request.RefundOrderRequest;
 import com.example.demo.dto.response.PaymentResult;
@@ -20,6 +24,7 @@ import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentStatus;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.model.enums.PaymentTransactionType;
+import com.example.demo.model.enums.ShiftStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,16 +38,19 @@ public class PaymentService {
 
     private final OrderRepository orderRepository;
     private final PaymentTransactionRepository paymentTransactionRepository;
+    private final WorkShiftRepository workShiftRepository;
     private final CurrentUserService currentUserService;
     private final BranchAccessService branchAccessService;
 
     public PaymentService(
             OrderRepository orderRepository,
             PaymentTransactionRepository paymentTransactionRepository,
+            WorkShiftRepository workShiftRepository,
             CurrentUserService currentUserService,
             BranchAccessService branchAccessService) {
         this.orderRepository = orderRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
+        this.workShiftRepository = workShiftRepository;
         this.currentUserService = currentUserService;
         this.branchAccessService = branchAccessService;
     }
@@ -52,11 +60,35 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng hoặc bạn không có quyền truy cập."));
     }
 
+    private WorkShift requireOpenShiftForOrder(User actor, Order order) {
+        if (actor.getRole() == null || (!"ROLE_CASHIER".equals(actor.getRole().getName())
+                && !"ROLE_ADMIN".equals(actor.getRole().getName()))) {
+            throw new ShiftAccessDeniedException();
+        }
+        Long currentBranchId = currentUserService.requireCurrentBranch().getId();
+        if (!currentBranchId.equals(order.getBranch().getId())) {
+            throw new ShiftAccessDeniedException();
+        }
+        WorkShift shift = workShiftRepository.findOpenShiftForCashierForUpdate(actor.getId(), ShiftStatus.OPEN)
+                .orElseThrow(ShiftNotOpenException::new);
+        if (shift.getStatus() != ShiftStatus.OPEN) {
+            throw new ShiftNotOpenException();
+        }
+        if (!actor.getId().equals(shift.getCashier().getId())
+                || !currentBranchId.equals(shift.getBranch().getId())
+                || !order.getBranch().getId().equals(shift.getBranch().getId())) {
+            throw new ShiftAccessDeniedException();
+        }
+        return shift;
+    }
+
     public PaymentResult payOrder(PayOrderRequest request) {
         Order order = requireOrderForCurrentBranch(request.orderId());
         if (order.getStatus() == OrderStatus.CANCELLED) {
             throw new PaymentNotAllowedException("Không thể thanh toán đơn đã hủy.");
         }
+        User actor = currentUserService.getCurrentUser();
+        WorkShift openShift = requireOpenShiftForOrder(actor, order);
         Long branchId = order.getBranch().getId();
         if (order.getPaymentStatus() == PaymentStatus.PAID || paymentTransactionRepository
                 .existsByOrderIdAndBranchIdAndTransactionTypeAndStatus(order.getId(), branchId,
@@ -72,10 +104,9 @@ public class PaymentService {
             throw new InvalidPaymentAmountException("Số tiền khách đưa không đủ.");
         }
         BigDecimal change = request.paymentMethod() == PaymentMethod.CASH ? tendered.subtract(total) : BigDecimal.ZERO;
-        User actor = currentUserService.getCurrentUser();
         LocalDateTime now = LocalDateTime.now();
         PaymentTransaction transaction = new PaymentTransaction();
-        transaction.setOrder(order); transaction.setBranch(order.getBranch()); transaction.setCreatedBy(actor);
+        transaction.setOrder(order); transaction.setBranch(order.getBranch()); transaction.setWorkShift(openShift); transaction.setCreatedBy(actor);
         transaction.setTransactionType(PaymentTransactionType.PAYMENT); transaction.setPaymentMethod(request.paymentMethod());
         transaction.setAmount(total); transaction.setAmountTendered(tendered); transaction.setChangeAmount(change);
         transaction.setReferenceCode(request.referenceCode()); transaction.setNote(request.note());
@@ -92,6 +123,8 @@ public class PaymentService {
         if (order.getPaymentStatus() != PaymentStatus.PAID) {
             throw new RefundNotAllowedException("Đơn hàng chưa đủ điều kiện hoàn tiền.");
         }
+        User actor = currentUserService.getCurrentUser();
+        WorkShift openShift = requireOpenShiftForOrder(actor, order);
         Long branchId = order.getBranch().getId();
         BigDecimal paid = paymentTransactionRepository.sumAmountByOrderIdAndBranchIdAndTypeAndStatus(order.getId(), branchId,
                 PaymentTransactionType.PAYMENT, PaymentTransactionStatus.COMPLETED);
@@ -100,10 +133,9 @@ public class PaymentService {
         if (paid == null || paid.signum() <= 0 || (refunded != null && refunded.compareTo(paid) >= 0)) {
             throw new RefundNotAllowedException("Đơn hàng đã được hoàn tiền hoặc không có giao dịch thanh toán hợp lệ.");
         }
-        User actor = currentUserService.getCurrentUser();
         LocalDateTime now = LocalDateTime.now();
         PaymentTransaction transaction = new PaymentTransaction();
-        transaction.setOrder(order); transaction.setBranch(order.getBranch()); transaction.setCreatedBy(actor);
+        transaction.setOrder(order); transaction.setBranch(order.getBranch()); transaction.setWorkShift(openShift); transaction.setCreatedBy(actor);
         transaction.setTransactionType(PaymentTransactionType.REFUND); transaction.setPaymentMethod(order.getPaymentMethod());
         transaction.setAmount(paid); transaction.setStatus(PaymentTransactionStatus.COMPLETED);
         transaction.setNote(request.note()); transaction.setCreatedAt(now); transaction.setCompletedAt(now);
