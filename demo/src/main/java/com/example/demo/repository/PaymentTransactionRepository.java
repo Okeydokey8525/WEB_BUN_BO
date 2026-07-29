@@ -5,6 +5,7 @@ import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.model.enums.PaymentTransactionType;
 import com.example.demo.repository.projection.ShiftPaymentAggregate;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
+import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -54,4 +55,19 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
             @Param("fromInclusive") LocalDateTime fromInclusive,
             @Param("toExclusive") LocalDateTime toExclusive,
             @Param("status") PaymentTransactionStatus status);
+
+    @Query("select t.paymentMethod as paymentMethod, "
+            + "coalesce(sum(case when t.transactionType = com.example.demo.model.enums.PaymentTransactionType.PAYMENT then t.amount else 0 end), 0) as grossAmount, "
+            + "coalesce(sum(case when t.transactionType = com.example.demo.model.enums.PaymentTransactionType.REFUND then t.amount else 0 end), 0) as refundAmount, "
+            + "count(case when t.transactionType = com.example.demo.model.enums.PaymentTransactionType.PAYMENT then 1 else null end) as paymentTransactionCount, "
+            + "count(case when t.transactionType = com.example.demo.model.enums.PaymentTransactionType.REFUND then 1 else null end) as refundTransactionCount, "
+            + "count(distinct case when t.transactionType = com.example.demo.model.enums.PaymentTransactionType.PAYMENT then t.order.id else null end) as paidOrderCount "
+            + "from PaymentTransaction t where t.branch.id = :branchId "
+            + "and t.status = com.example.demo.model.enums.PaymentTransactionStatus.COMPLETED "
+            + "and t.completedAt >= :fromInclusive and t.completedAt < :toExclusive "
+            + "group by t.paymentMethod")
+    List<PaymentMethodAggregateProjection> aggregateByPaymentMethodAndBranchAndCompletedAt(
+            @Param("branchId") Long branchId,
+            @Param("fromInclusive") LocalDateTime fromInclusive,
+            @Param("toExclusive") LocalDateTime toExclusive);
 }

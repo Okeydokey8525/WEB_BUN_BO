@@ -1,12 +1,15 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.request.ReportFilterRequest;
+import com.example.demo.dto.response.PaymentMethodSummary;
 import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.model.User;
+import com.example.demo.model.enums.PaymentMethod;
 import com.example.demo.model.enums.PaymentTransactionStatus;
 import com.example.demo.repository.PaymentTransactionRepository;
+import com.example.demo.repository.projection.PaymentMethodAggregateProjection;
 import com.example.demo.repository.projection.RevenueAggregateProjection;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.security.CurrentUserService;
@@ -18,6 +21,11 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -38,13 +46,7 @@ public class ReportingService {
 
     public RevenueSummary getRevenueSummary(ReportFilterRequest filter) {
         validateFilter(filter);
-
-        User actor = currentUserService.getCurrentUser();
-        if (actor.getRole() == null || !"ROLE_ADMIN".equals(actor.getRole().getName())) {
-            throw new BranchAccessDeniedException("Khong co quyen truy cap bao cao doanh thu.");
-        }
-
-        Long branchId = branchAccessService.requireScopedBranchId();
+        Long branchId = requireAdminBranchId();
         LocalDateTime fromInclusive = filter.fromDate().atStartOfDay();
         LocalDateTime toExclusive = filter.toDate().plusDays(1).atStartOfDay();
         RevenueAggregateProjection aggregate = paymentTransactionRepository.aggregateRevenueByBranchAndCompletedAt(
@@ -60,6 +62,32 @@ public class ReportingService {
                 : BigDecimal.ZERO;
 
         return new RevenueSummary(grossSales, refundTotal, netRevenue, paidOrderCount, averageOrderValue);
+    }
+
+    public List<PaymentMethodSummary> getPaymentMethodBreakdown(ReportFilterRequest filter) {
+        validateFilter(filter);
+        Long branchId = requireAdminBranchId();
+        LocalDateTime fromInclusive = filter.fromDate().atStartOfDay();
+        LocalDateTime toExclusive = filter.toDate().plusDays(1).atStartOfDay();
+        List<PaymentMethodAggregateProjection> aggregates = paymentTransactionRepository
+                .aggregateByPaymentMethodAndBranchAndCompletedAt(branchId, fromInclusive, toExclusive);
+        Map<PaymentMethod, PaymentMethodAggregateProjection> byMethod = (aggregates == null ? List.<PaymentMethodAggregateProjection>of() : aggregates)
+                .stream()
+                .filter(aggregate -> aggregate != null && aggregate.getPaymentMethod() != null)
+                .collect(Collectors.toMap(PaymentMethodAggregateProjection::getPaymentMethod, aggregate -> aggregate));
+
+        return Arrays.stream(PaymentMethod.values())
+                .sorted(Comparator.comparingInt(this::paymentMethodOrder).thenComparing(Enum::name))
+                .map(method -> toPaymentMethodSummary(method, byMethod.get(method)))
+                .toList();
+    }
+
+    private Long requireAdminBranchId() {
+        User actor = currentUserService.getCurrentUser();
+        if (actor.getRole() == null || !"ROLE_ADMIN".equals(actor.getRole().getName())) {
+            throw new BranchAccessDeniedException("Khong co quyen truy cap bao cao doanh thu.");
+        }
+        return branchAccessService.requireScopedBranchId();
     }
 
     private void validateFilter(ReportFilterRequest filter) {
@@ -78,5 +106,29 @@ public class ReportingService {
 
     private BigDecimal zero(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private PaymentMethodSummary toPaymentMethodSummary(PaymentMethod method,
+                                                        PaymentMethodAggregateProjection aggregate) {
+        BigDecimal grossAmount = aggregate == null ? BigDecimal.ZERO : zero(aggregate.getGrossAmount());
+        BigDecimal refundAmount = aggregate == null ? BigDecimal.ZERO : zero(aggregate.getRefundAmount());
+        long paymentCount = aggregate == null || aggregate.getPaymentTransactionCount() == null
+                ? 0L : aggregate.getPaymentTransactionCount();
+        long refundCount = aggregate == null || aggregate.getRefundTransactionCount() == null
+                ? 0L : aggregate.getRefundTransactionCount();
+        long paidOrderCount = aggregate == null || aggregate.getPaidOrderCount() == null
+                ? 0L : aggregate.getPaidOrderCount();
+        return new PaymentMethodSummary(method, grossAmount, refundAmount, grossAmount.subtract(refundAmount),
+                paymentCount, refundCount, paidOrderCount);
+    }
+
+    private int paymentMethodOrder(PaymentMethod method) {
+        if (method == PaymentMethod.CASH) {
+            return 0;
+        }
+        if (method == PaymentMethod.VIETQR) {
+            return 1;
+        }
+        return 2;
     }
 }
