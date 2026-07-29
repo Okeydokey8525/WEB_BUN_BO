@@ -74,6 +74,7 @@ class ShiftServiceTests {
     }
 
     @Test void zeroOpeningCashIsAllowed() { shiftService.openShift(new OpenShiftRequest(BigDecimal.ZERO, null)); verify(workShiftRepository).save(any()); }
+    @Test void successfulOpenWritesStructuredAudit() { shiftService.openShift(new OpenShiftRequest(new BigDecimal("500000"), null)); verify(auditService).record(eq(com.example.demo.model.enums.AuditAction.SHIFT_OPEN), eq(com.example.demo.model.enums.AuditEntityType.WORK_SHIFT), eq(100L), eq(branch), eq(cashier), anyString(), argThat(metadata -> metadata.get("openingCash").equals(new BigDecimal("500000")) && metadata.get("branchId").equals(1L))); }
     @Test void negativeOpeningCashIsRejected() { assertThrows(BusinessValidationException.class, () -> shiftService.openShift(new OpenShiftRequest(new BigDecimal("-1000"), null))); verify(workShiftRepository, never()).save(any()); }
     @Test void nullRequestIsRejected() { assertThrows(BusinessValidationException.class, () -> shiftService.openShift(null)); verify(workShiftRepository, never()).save(any()); }
     @Test void nullOpeningCashIsRejected() { assertThrows(BusinessValidationException.class, () -> shiftService.openShift(new OpenShiftRequest(null, null))); verify(workShiftRepository, never()).save(any()); }
