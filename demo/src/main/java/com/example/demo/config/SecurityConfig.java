@@ -51,6 +51,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/admin/inventory", "/admin/inventory/**", "/admin/recipes", "/admin/recipes/**").hasAnyRole("ADMIN", "INVENTORY")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/cashier/shifts/**").hasAnyRole("ADMIN", "CASHIER")
                 .requestMatchers("/cashier/**").hasAnyRole("ADMIN", "CASHIER")
                 .requestMatchers("/waiter/**").hasAnyRole("ADMIN", "WAITER")
                 .requestMatchers("/kitchen/**").hasAnyRole("ADMIN", "KITCHEN")
