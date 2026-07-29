@@ -7,6 +7,7 @@ import com.example.demo.dto.response.RevenueSummary;
 import com.example.demo.dto.response.TopDishSummary;
 import com.example.demo.dto.response.InventoryConsumptionSummary;
 import com.example.demo.dto.response.ShiftReportSummary;
+import com.example.demo.dto.response.ReportingDashboard;
 import com.example.demo.exception.BranchAccessDeniedException;
 import com.example.demo.exception.BusinessValidationException;
 import com.example.demo.model.Branch;
@@ -44,6 +45,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -722,6 +724,85 @@ class ReportingServiceTests {
         verify(workShiftRepository, never()).findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any());
     }
 
+    @Test
+    void dashboardAggregatesEveryExistingReportOnceWithSuppliedLimits() {
+        stubDashboardSources();
+        LocalDateTime before = LocalDateTime.now();
+
+        ReportingDashboard dashboard = reportingService.getDashboard(filter, 7, 9);
+
+        assertEquals(filter.fromDate(), dashboard.fromDate());
+        assertEquals(filter.toDate(), dashboard.toDate());
+        assertEquals(new BigDecimal("200000"), dashboard.revenueSummary().grossSales());
+        assertEquals(PaymentMethod.CASH, dashboard.paymentMethods().get(0).paymentMethod());
+        assertEquals(LocalDate.of(2026, 7, 1), dashboard.dailyRevenue().get(0).date());
+        assertEquals("Bun bo", dashboard.topDishes().get(0).dishName());
+        assertEquals("Gao", dashboard.inventoryConsumption().get(0).inventoryItemName());
+        assertEquals(71L, dashboard.shiftReports().get(0).shiftId());
+        assertEquals(7, dashboard.topDishLimit());
+        assertEquals(9, dashboard.inventoryLimit());
+        assertNotNull(dashboard.generatedAt());
+        assertEquals(false, dashboard.generatedAt().isBefore(before));
+
+        verify(paymentTransactionRepository).aggregateRevenueByBranchAndCompletedAt(anyLong(), any(), any(), any());
+        verify(paymentTransactionRepository).aggregateByPaymentMethodAndBranchAndCompletedAt(anyLong(), any(), any());
+        verify(paymentTransactionRepository).aggregateDailyRevenueByBranchAndCompletedAt(anyLong(), any(), any());
+        verify(orderItemRepository).aggregateTopDishesByBranchAndPaidAt(anyLong(), any(), any(), any(Pageable.class));
+        verify(inventoryTransactionRepository).aggregateConsumptionByBranchAndCreatedAt(anyLong(), any(), any(), any(Pageable.class));
+        verify(workShiftRepository).findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any());
+    }
+
+    @Test
+    void dashboardDefaultLimitsAreTenAndListsAreNeverNull() {
+        stubEmptyDashboardSources();
+
+        ReportingDashboard dashboard = reportingService.getDashboard(filter);
+
+        assertEquals(10, dashboard.topDishLimit());
+        assertEquals(10, dashboard.inventoryLimit());
+        assertNotNull(dashboard.paymentMethods());
+        assertNotNull(dashboard.dailyRevenue());
+        assertNotNull(dashboard.topDishes());
+        assertNotNull(dashboard.inventoryConsumption());
+        assertNotNull(dashboard.shiftReports());
+    }
+
+    @Test
+    void dashboardAcceptsBoundaryLimits() {
+        stubEmptyDashboardSources();
+
+        assertEquals(1, reportingService.getDashboard(filter, 1, 1).topDishLimit());
+        assertEquals(100, reportingService.getDashboard(filter, 100, 100).inventoryLimit());
+    }
+
+    @Test
+    void dashboardRejectsInvalidLimitsBeforeAnyRepositoryAccess() {
+        assertThrows(BusinessValidationException.class, () -> reportingService.getDashboard(filter, 0, 10));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getDashboard(filter, 101, 10));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getDashboard(filter, 10, 0));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getDashboard(filter, 10, 101));
+
+        verify(paymentTransactionRepository, never()).aggregateRevenueByBranchAndCompletedAt(anyLong(), any(), any(), any());
+        verify(orderItemRepository, never()).aggregateTopDishesByBranchAndPaidAt(anyLong(), any(), any(), any());
+        verify(inventoryTransactionRepository, never()).aggregateConsumptionByBranchAndCreatedAt(anyLong(), any(), any(), any());
+        verify(workShiftRepository, never()).findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any());
+    }
+
+    @Test
+    void dashboardRejectsInvalidFilterAndNonAdminBeforeRepositoryAccess() {
+        assertThrows(BusinessValidationException.class, () -> reportingService.getDashboard(null));
+        assertThrows(BusinessValidationException.class, () -> reportingService.getDashboard(
+                new ReportFilterRequest(LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 1))));
+        admin = user("ROLE_CASHIER", admin.getBranch());
+        when(currentUserService.getCurrentUser()).thenReturn(admin);
+        assertThrows(BranchAccessDeniedException.class, () -> reportingService.getDashboard(filter));
+
+        verify(paymentTransactionRepository, never()).aggregateRevenueByBranchAndCompletedAt(anyLong(), any(), any(), any());
+        verify(orderItemRepository, never()).aggregateTopDishesByBranchAndPaidAt(anyLong(), any(), any(), any());
+        verify(inventoryTransactionRepository, never()).aggregateConsumptionByBranchAndCreatedAt(anyLong(), any(), any(), any());
+        verify(workShiftRepository, never()).findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any());
+    }
+
     private void assertDeniedRole(String roleName) {
         admin = user(roleName, admin.getBranch());
         when(currentUserService.getCurrentUser()).thenReturn(admin);
@@ -797,6 +878,26 @@ class ReportingServiceTests {
 
     private void stubConsumption(InventoryConsumptionProjection... projections) {
         when(inventoryTransactionRepository.aggregateConsumptionByBranchAndCreatedAt(anyLong(), any(), any(), any(Pageable.class))).thenReturn(List.of(projections));
+    }
+
+    private void stubDashboardSources() {
+        stubAggregate("200000", "50000", 2L);
+        stubMethodAggregates(methodProjection(PaymentMethod.CASH, "150000", "50000", 1L, 1L, 1L));
+        stubDailyAggregates(dailyProjection(LocalDate.of(2026, 7, 1), "200000", "50000", 2L));
+        stubTopDishes(topDishProjection(1L, "Bun bo", 5L, "250000", 2L));
+        stubConsumption(consumptionProjection(1L, "Gao", "kg", "15", "3", "2"));
+        when(workShiftRepository.findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any()))
+                .thenReturn(List.of(reportShift(71L, admin, ShiftStatus.CLOSED, LocalDateTime.of(2026, 7, 2, 8, 0))));
+    }
+
+    private void stubEmptyDashboardSources() {
+        stubAggregate("0", "0", 0L);
+        stubMethodAggregates();
+        stubDailyAggregates();
+        stubTopDishes();
+        stubConsumption();
+        when(workShiftRepository.findByBranchIdAndOpenedAtGreaterThanEqualAndOpenedAtLessThanOrderByOpenedAtDescIdDesc(anyLong(), any(), any()))
+                .thenReturn(List.of());
     }
 
     private InventoryConsumptionProjection consumptionProjection(Long id, String name, String unit, String consumed, String reversed, String waste) {
