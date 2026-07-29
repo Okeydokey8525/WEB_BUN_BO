@@ -13,11 +13,14 @@ import com.example.demo.repository.InventoryRepository;
 import com.example.demo.repository.RecipeItemRepository;
 import com.example.demo.repository.RecipeRepository;
 import com.example.demo.security.BranchAccessService;
+import com.example.demo.model.enums.AuditAction;
+import com.example.demo.model.enums.AuditEntityType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ public class RecipeService {
     private final DishRepository dishRepository;
     private final InventoryRepository inventoryRepository;
     private final BranchAccessService branchAccessService;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public List<Recipe> getRecipesForCurrentBranch() {
@@ -53,7 +57,9 @@ public class RecipeService {
                     Recipe recipe = new Recipe();
                     recipe.setDish(dish);
                     recipe.setBranch(dish.getBranch());
-                    return recipeRepository.save(recipe);
+                    Recipe saved = recipeRepository.save(recipe);
+                    auditService.record(AuditAction.RECIPE_CREATED, AuditEntityType.RECIPE, saved.getId(), "Recipe created", Map.of("dishId", dish.getId()));
+                    return saved;
                 });
     }
 
@@ -77,6 +83,7 @@ public class RecipeService {
         item.setAmount(request.quantityRequired());
         RecipeItem saved = recipeItemRepository.save(item);
         recipe.getRecipeItems().add(saved);
+        auditService.record(AuditAction.RECIPE_ITEM_ADDED, AuditEntityType.RECIPE_ITEM, saved.getId(), "Recipe item added", Map.of("recipeId", recipe.getId(), "inventoryItemId", inventoryItem.getId(), "quantityRequired", saved.getAmount()));
         return saved;
     }
 
@@ -86,6 +93,7 @@ public class RecipeService {
         RecipeItem item = recipeItemRepository.findByIdAndRecipeIdAndRecipeBranchId(itemId, recipeId, branchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nguyên liệu công thức hoặc bạn không có quyền truy cập."));
         recipeItemRepository.delete(item);
+        auditService.record(AuditAction.RECIPE_ITEM_REMOVED, AuditEntityType.RECIPE_ITEM, item.getId(), "Recipe item removed", Map.of("recipeId", recipeId, "inventoryItemId", item.getInventoryItem() == null ? "UNKNOWN" : item.getInventoryItem().getId()));
     }
 
     private Recipe requireRecipe(Long recipeId, Long branchId) {
