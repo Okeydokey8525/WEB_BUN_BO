@@ -50,6 +50,7 @@ public class SecurityConfig {
                     "/api/favorites/**"
                 ).permitAll()
                 .requestMatchers("/api/admin/audit-logs/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/reports/**").hasRole("ADMIN")
                 .requestMatchers("/admin/inventory", "/admin/inventory/**", "/admin/recipes", "/admin/recipes/**").hasAnyRole("ADMIN", "INVENTORY")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/cashier/shifts/**").hasAnyRole("ADMIN", "CASHIER")

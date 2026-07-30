@@ -1,0 +1,29 @@
+package com.example.demo.controller;
+
+import com.example.demo.dto.request.ReportFilterRequest;
+import com.example.demo.dto.response.*;
+import com.example.demo.exception.BranchAccessDeniedException;
+import com.example.demo.service.CsvExportService;
+import com.example.demo.service.ReportingService;
+import com.example.demo.security.BranchAccessService;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
+import java.util.*;
+
+@RestController
+@RequestMapping("/api/admin/reports")
+public class ReportingCsvController {
+    private final ReportingService reports; private final CsvExportService csv; private final BranchAccessService branches;
+    public ReportingCsvController(ReportingService reports, CsvExportService csv, BranchAccessService branches) { this.reports=reports; this.csv=csv; this.branches=branches; }
+    @GetMapping("/revenue/export.csv") public ResponseEntity<byte[]> revenue(@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate from,@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate to,@RequestParam(required=false) Long branchId){ ReportFilterRequest f=filter(from,to,branchId); RevenueSummary r=reports.getRevenueSummary(f); return file("revenue",f,List.of("From","To","Gross Revenue","Refund Amount","Net Revenue","Transaction Count"),List.of(List.of(from,to,r.grossSales(),r.refundTotal(),r.netRevenue(),r.paidOrderCount()))); }
+    @GetMapping("/daily-revenue/export.csv") public ResponseEntity<byte[]> daily(@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate from,@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate to,@RequestParam(required=false) Long branchId){ ReportFilterRequest f=filter(from,to,branchId); return file("daily-revenue",f,List.of("Date","Gross Revenue","Refund Amount","Net Revenue","Transaction Count"),reports.getDailyRevenue(f).stream().map(x->List.<Object>of(x.date(),x.grossSales(),x.refundTotal(),x.netRevenue(),x.paidOrderCount())).toList()); }
+    @GetMapping("/payment-methods/export.csv") public ResponseEntity<byte[]> methods(@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate from,@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate to,@RequestParam(required=false) Long branchId){ ReportFilterRequest f=filter(from,to,branchId); return file("payment-methods",f,List.of("Payment Method","Transaction Count","Gross Amount","Refund Amount","Net Amount"),reports.getPaymentMethodBreakdown(f).stream().map(x->List.<Object>of(x.paymentMethod(),x.paymentTransactionCount(),x.grossAmount(),x.refundAmount(),x.netAmount())).toList()); }
+    @GetMapping("/top-dishes/export.csv") public ResponseEntity<byte[]> topDishes(@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate from,@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate to,@RequestParam(defaultValue="10") int limit,@RequestParam(required=false) Long branchId){ ReportFilterRequest f=filter(from,to,branchId); List<List<Object>> rows=new ArrayList<>(); int rank=1; for(TopDishSummary x:reports.getTopDishes(f,limit)) rows.add(row(rank++,x.dishId(),x.dishName(),x.quantitySold(),x.revenue(),x.orderCount())); return file("top-dishes",f,List.of("Rank","Dish ID","Dish Name","Quantity Sold","Revenue","Order Count"),rows); }
+    @GetMapping("/inventory-consumption/export.csv") public ResponseEntity<byte[]> consumption(@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate from,@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate to,@RequestParam(defaultValue="10") int limit,@RequestParam(required=false) Long branchId){ ReportFilterRequest f=filter(from,to,branchId); List<List<Object>> rows=reports.getInventoryConsumption(f,limit).stream().map(x->row(x.inventoryItemId(),x.inventoryItemName(),x.unit(),x.consumedQuantity(),x.reversedQuantity(),x.netConsumedQuantity())).toList(); return file("inventory-consumption",f,List.of("Inventory Item ID","Inventory Item Name","Unit","Quantity Consumed","Quantity Reversed","Net Quantity"),rows); }
+    @GetMapping("/shifts/export.csv") public ResponseEntity<byte[]> shifts(@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate from,@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate to,@RequestParam(required=false) Long branchId){ ReportFilterRequest f=filter(from,to,branchId); List<List<Object>> rows=reports.getShiftReports(f).stream().map(x->row(x.shiftId(),x.cashierUsername(),x.openedAt(),x.closedAt(),x.openingCash(),x.expectedCash(),x.actualCash(),x.cashDifference(),x.status(),x.orderCount(),x.totalSales())).toList(); return file("shifts",f,List.of("Shift ID","Opened By","Opened At","Closed At","Opening Cash","Expected Cash","Actual Cash","Difference","Status","Payment Count","Net Revenue"),rows); }
+    private ReportFilterRequest filter(LocalDate from, LocalDate to, Long branchId){ Long scoped=branches.requireScopedBranchId(); if(branchId!=null&&!branchId.equals(scoped)) throw new BranchAccessDeniedException("Khong duoc export chi nhanh khac."); return new ReportFilterRequest(from,to); }
+    private ResponseEntity<byte[]> file(String prefix,ReportFilterRequest f,List<String> header,List<? extends List<?>> rows){ String name=prefix+"-"+f.fromDate()+"-to-"+f.toDate()+".csv"; return ResponseEntity.ok().contentType(MediaType.parseMediaType("text/csv;charset=UTF-8")).header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\""+name+"\"").body(csv.export(header,rows)); }
+    private List<Object> row(Object... values){ return new ArrayList<>(Arrays.asList(values)); }
+}
