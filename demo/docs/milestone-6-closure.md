@@ -32,7 +32,9 @@
 
 - Automated coverage includes service, repository, workflow integration, CSV, API security and MVC/template tests.
 - The final regression command remains `./mvnw.cmd clean test` from `demo`.
-- Manual browser smoke is still recommended for real login credentials, CSV downloads and mobile breakpoints.
+- Final automated regression passed: 203 tests, with 0 failures and 0 errors.
+- Desktop browser smoke on the local H2 seed data passed: anonymous access to both admin pages redirects to `/login`; ADMIN can open `/admin/reports` and `/admin/audit-logs`; the expected JavaScript files load without console errors; CASHIER is denied both ADMIN pages without their content being rendered.
+- Remaining manual follow-up: verify the six downloaded CSV files in Excel and exercise mobile breakpoints with real browsers.
 
 ## Known limitations and future work
 
