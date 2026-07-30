@@ -87,6 +87,16 @@ public class AdminController {
         return "admin/dashboard";
     }
 
+    @GetMapping("/reports")
+    public String reportsPage() {
+        return "admin/reports";
+    }
+
+    @GetMapping("/audit-logs")
+    public String auditLogsPage() {
+        return "admin/audit-logs";
+    }
+
     @PostMapping("/order/{id}/update-status")
     public String updateOrderStatus(@PathVariable("id") Long id, @RequestParam("status") OrderStatus status, @RequestHeader(value = "Referer", required = false) String referer) {
         orderService.updateStatus(id, status);
