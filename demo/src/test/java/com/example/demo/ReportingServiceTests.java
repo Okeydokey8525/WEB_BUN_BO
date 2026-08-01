@@ -400,7 +400,7 @@ class ReportingServiceTests {
         stubDailyAggregates(dailyProjection(LocalDate.of(2026, 7, 1), "200000", "50000", 2L));
 
         DailyRevenueSummary summary = reportingService.getDailyRevenue(singleDayFilter()).get(0);
-        
+
         assertEquals(LocalDate.of(2026, 7, 1), summary.date());
         assertEquals(new BigDecimal("200000"), summary.grossSales());
         assertEquals(new BigDecimal("50000"), summary.refundTotal());
