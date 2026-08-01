@@ -138,7 +138,7 @@
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 12px;">
                                         <img th:if="${item.dish != null && item.dish.imageUrl != null}" th:src="${item.dish.imageUrl}" class="item-img" alt="dish">
-                                        <img th:unless="${item.dish != null && item.dish.imageUrl != null}" src="https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop" class="item-img" alt="dish">
+                                        <img th:unless="${item.dish != null && item.dish.imageUrl != null}" src="/images/placeholders/menu-item.svg" class="item-img" alt="dish">
                                         <div>
                                             <div style="font-weight: 700; color: var(--text-dark); font-size: 1.05rem;" th:text="${item.dish != null ? item.dish.name : 'Món ăn không tồn tại'}">Bún Bò Đặc Biệt</div>
                                             <div style="font-size: 0.8rem; color: var(--secondary);" th:if="${item.dish != null && item.dish.category != null}" th:text="${item.dish.category}">Danh mục</div>

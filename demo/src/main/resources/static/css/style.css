@@ -162,7 +162,13 @@ a {
 /* HERO SECTION */
 .hero {
     min-height: 70vh;
-    background: linear-gradient(135deg, rgba(192, 57, 43, 0.9), rgba(211, 84, 0, 0.8)), url('https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=1600&auto=format&fit=crop') center/cover no-repeat;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(124, 45, 18, 0.96) 0%,
+            rgba(194, 65, 12, 0.9) 48%,
+            rgba(245, 158, 11, 0.78) 100%
+        );
     display: flex;
     flex-direction: column;
     justify-content: center;
