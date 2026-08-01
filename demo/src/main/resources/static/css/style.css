@@ -635,6 +635,55 @@ a {
     background-color: #FDFEFE;
 }
 
+/* ADMIN MENU IMAGE UPLOAD */
+.menu-dish-thumbnail {
+    width: 50px;
+    height: 50px;
+    display: block;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: #eee;
+}
+
+.menu-image-upload {
+    display: grid;
+    gap: 0.55rem;
+    margin-bottom: 1.5rem;
+}
+
+.menu-image-upload label {
+    font-weight: 600;
+}
+
+.menu-image-preview {
+    width: 100%;
+    max-width: 220px;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-cream);
+}
+
+.menu-image-upload input[type="file"] {
+    width: 100%;
+    padding: 0.55rem;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-cream);
+}
+
+.menu-image-help {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.menu-image-error {
+    color: var(--danger);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 /* MODAL / DIALOG */
 .modal-overlay {
     position: fixed;

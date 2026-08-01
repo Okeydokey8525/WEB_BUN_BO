@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -206,14 +207,19 @@ public class AdminController {
             @RequestParam("name") String name,
             @RequestParam("price") BigDecimal price,
             @RequestParam("category") String category,
-            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            RedirectAttributes redirectAttributes) {
         
         Branch branch = getUserBranch(authentication);
         if (branch == null) {
             return "redirect:/login";
         }
 
-        dishService.save(id, name, price, category, imageUrl);
+        try {
+            dishService.save(id, name, price, category, imageFile);
+        } catch (com.example.demo.exception.FileStorageException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
         return "redirect:/admin/menu";
     }
 
