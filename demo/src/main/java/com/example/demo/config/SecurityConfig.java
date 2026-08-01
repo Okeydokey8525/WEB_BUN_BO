@@ -28,7 +28,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/h2-console/**")
                 .ignoringRequestMatchers("/api/**")
-                .ignoringRequestMatchers("/order/place", "/register", "/forgot-password", "/profile/**", "/api/favorites/**")
+                .ignoringRequestMatchers("/order/place", "/register", "/forgot-password", "/api/favorites/**")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.disable()) // Required for H2 Console
