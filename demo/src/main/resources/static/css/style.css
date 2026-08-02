@@ -162,7 +162,13 @@ a {
 /* HERO SECTION */
 .hero {
     min-height: 70vh;
-    background: linear-gradient(135deg, rgba(192, 57, 43, 0.9), rgba(211, 84, 0, 0.8)), url('https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=1600&auto=format&fit=crop') center/cover no-repeat;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(124, 45, 18, 0.96) 0%,
+            rgba(194, 65, 12, 0.9) 48%,
+            rgba(245, 158, 11, 0.78) 100%
+        );
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -634,6 +640,62 @@ a {
 .admin-table tbody tr:hover {
     background-color: #FDFEFE;
 }
+
+/* ADMIN MENU IMAGE UPLOAD */
+.menu-dish-thumbnail {
+    width: 50px;
+    height: 50px;
+    display: block;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: #eee;
+}
+
+.menu-image-upload {
+    display: grid;
+    gap: 0.55rem;
+    margin-bottom: 1.5rem;
+}
+
+.menu-image-upload label {
+    font-weight: 600;
+}
+
+.menu-image-preview {
+    width: 100%;
+    max-width: 220px;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-cream);
+}
+
+.menu-image-upload input[type="file"] {
+    width: 100%;
+    padding: 0.55rem;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-cream);
+}
+
+.menu-image-help {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.menu-image-error {
+    color: var(--danger);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.profile-avatar { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar-upload { display: grid; gap: .55rem; margin-bottom: 1.5rem; }
+.profile-avatar-upload label { font-weight: 600; }
+.profile-avatar-upload input[type="file"] { max-width: 100%; padding: .7rem; border: 1px dashed var(--border-color); border-radius: var(--radius-sm); }
+.profile-avatar-help { color: var(--text-light); font-size: .85rem; }
+.profile-avatar-error { color: var(--danger); font-size: .9rem; font-weight: 600; }
 
 /* MODAL / DIALOG */
 .modal-overlay {
@@ -1241,6 +1303,31 @@ body.dark-mode .navbar {
     border-color: #2D3748 !important;
 }
 
+/* Keep the admin quick-search control visually unified in dark mode. */
+[data-theme="dark"] .admin-search-box input,
+body.dark-mode .admin-search-box input {
+    background-color: #18202A !important;
+    color: #F0F4F8 !important;
+    border-color: #4A5568 !important;
+}
+
+[data-theme="dark"] .admin-search-box input::placeholder,
+body.dark-mode .admin-search-box input::placeholder {
+    color: #CBD5E0 !important;
+    opacity: 1;
+}
+
+[data-theme="dark"] .admin-search-box i,
+body.dark-mode .admin-search-box i {
+    color: #CBD5E0 !important;
+}
+
+[data-theme="dark"] .admin-search-box input:focus,
+body.dark-mode .admin-search-box input:focus {
+    background-color: #222E3C !important;
+    border-color: #E57368 !important;
+}
+
 [data-theme="dark"] .filter-select, body.dark-mode .filter-select,
 [data-theme="dark"] .filter-tab-btn, body.dark-mode .filter-tab-btn {
     background-color: #18202A !important;
@@ -1302,6 +1389,10 @@ body.dark-mode .ai-chat-footer {
     background-color: #18202A !important;
     border-top: 1px solid #2D3748 !important;
 }
+
+/* Reporting and audit administration pages */
+.admin-page-header,.admin-filter-card,.admin-data-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);padding:1.25rem 1.5rem;margin:0 0 1.25rem}.admin-page-heading,.admin-card-header,.admin-filter-actions,.pagination{display:flex;align-items:center;gap:1rem}.admin-page-heading h1,.admin-card-header h2{margin:0;color:var(--text-dark)}.admin-page-heading p,.admin-card-header p{margin:.35rem 0 0;color:var(--text-light)}.admin-page-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:12px;background:rgba(192,57,43,.12);color:var(--primary);font-size:1.35rem}.admin-filter-card{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}.admin-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:1rem;flex:1}.admin-filter-grid label{display:grid;gap:.4rem;color:var(--text-dark);font-weight:600}.admin-filter-grid input{min-height:42px}.report-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-bottom:1.25rem}.report-kpi-card{display:grid;gap:.35rem;padding:1rem 1.15rem;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}.report-kpi-card>i{color:var(--primary);font-size:1.1rem}.report-kpi-card span{color:var(--text-light);font-size:.9rem}.report-kpi-card strong{color:var(--text-dark);font-size:1.2rem}.admin-card-header{justify-content:space-between;flex-wrap:wrap;margin-bottom:1rem}.csv-download{display:inline-flex;align-items:center;gap:.45rem;padding:.55rem .8rem;border-radius:var(--radius-sm);background:var(--bg-cream);border:1px solid var(--border-color);color:var(--primary);font-weight:700;text-decoration:none;cursor:pointer}.admin-table-wrapper{overflow-x:auto}.admin-table{width:100%;border-collapse:collapse}.admin-table th,.admin-table td{padding:.8rem .9rem;border-bottom:1px solid var(--border-color);text-align:left;white-space:nowrap}.admin-table th{background:var(--bg-cream);color:var(--text-dark)}.admin-table tbody tr:hover{background:rgba(192,57,43,.04)}.numeric{text-align:right!important}.error-state{color:var(--danger);margin:0}.audit-action-badge{display:inline-flex;padding:.25rem .55rem;border-radius:999px;font-size:.78rem;font-weight:700}.audit-action-success{background:#e8f8f0;color:#1e8449}.audit-action-warning{background:#fff3cd;color:#9a6700}.audit-action-danger{background:#fde8e8;color:#b42318}.audit-action-neutral{background:#edf2f7;color:#4a5568}.metadata-details{max-width:260px}.metadata-details pre{white-space:pre-wrap;word-break:break-word;max-height:150px;overflow:auto}.pagination{justify-content:flex-end;margin-top:1rem}.page-info{color:var(--text-light)}.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+@media (max-width:768px){.admin-page-header,.admin-filter-card,.admin-data-card{padding:1rem}.admin-filter-grid,.report-kpi-grid{grid-template-columns:1fr}.admin-filter-actions{width:100%}.admin-filter-actions button{flex:1}.admin-table th,.admin-table td{padding:.65rem}.admin-page-heading{align-items:flex-start}.pagination{justify-content:space-between}}
 
 /* =========================================================
    MOBILE RESPONSIVE OPTIMIZATION (TỐI ƯU HÓA DI ĐỘNG)

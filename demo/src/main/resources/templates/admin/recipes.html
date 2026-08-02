@@ -9,7 +9,7 @@
 <body><div class="admin-layout">
     <aside th:replace="~{fragments/layout :: admin_sidebar('recipes')}"></aside>
     <main class="admin-content">
-        <div th:replace="~{fragments/layout :: admin_topbar('Cấu hình công thức', 'Tìm món ăn...')}"></div>
+        <div th:replace="~{fragments/layout :: admin_topbar('Công thức nấu ăn', 'Tìm món ăn...')}"></div>
         <div th:if="${successMessage}" class="alert-warning-toast" style="margin-bottom:1rem;border-left-color:#27ae60;"><i class="fa-solid fa-circle-check" style="color:#27ae60;"></i><span th:text="${successMessage}"></span></div>
         <div th:if="${errorMessage}" class="alert-warning-toast" style="margin-bottom:1rem;border-left-color:#c0392b;"><i class="fa-solid fa-circle-exclamation" style="color:#c0392b;"></i><span th:text="${errorMessage}"></span></div>
         <section class="panel" style="padding:0;overflow:hidden;">

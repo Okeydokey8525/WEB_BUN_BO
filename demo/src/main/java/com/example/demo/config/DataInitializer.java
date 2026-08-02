@@ -75,13 +75,13 @@ public class DataInitializer {
             Dish bunBoGioHeo = null;
             
             if (dishRepository.count() == 0) {
-                bunBoDacBiet = dishRepository.save(new Dish(null, "Bún Bò Đặc Biệt", new BigDecimal("65000"), "https://images.unsplash.com/photo-1555126634-323283e090fa?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
-                bunBoTaiNam = dishRepository.save(new Dish(null, "Bún Bò Tái Nạm Chả", new BigDecimal("55000"), "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
-                bunBoGioHeo = dishRepository.save(new Dish(null, "Bún Bò Giò Heo", new BigDecimal("50000"), "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop", "Bún Bò", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Chả Cua Thêm (1 viên)", new BigDecimal("12000"), "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600&auto=format&fit=crop", "Món thêm", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Thịt Nạm Bò Thêm", new BigDecimal("18000"), "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=600&auto=format&fit=crop", "Món thêm", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Trà Đá", new BigDecimal("5000"), "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop", "Nước uống", true, defaultBranch));
-                dishRepository.save(new Dish(null, "Nước Ngọt (Coca/Pepsi)", new BigDecimal("15000"), "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop", "Nước uống", true, defaultBranch));
+                bunBoDacBiet = dishRepository.save(new Dish(null, "Bún Bò Đặc Biệt", new BigDecimal("65000"), "/images/placeholders/menu-item.svg", "Bún Bò", true, defaultBranch));
+                bunBoTaiNam = dishRepository.save(new Dish(null, "Bún Bò Tái Nạm Chả", new BigDecimal("55000"), "/images/placeholders/menu-item.svg", "Bún Bò", true, defaultBranch));
+                bunBoGioHeo = dishRepository.save(new Dish(null, "Bún Bò Giò Heo", new BigDecimal("50000"), "/images/placeholders/menu-item.svg", "Bún Bò", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Chả Cua Thêm (1 viên)", new BigDecimal("12000"), "/images/placeholders/menu-item.svg", "Món thêm", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Thịt Nạm Bò Thêm", new BigDecimal("18000"), "/images/placeholders/menu-item.svg", "Món thêm", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Trà Đá", new BigDecimal("5000"), "/images/placeholders/menu-item.svg", "Nước uống", true, defaultBranch));
+                dishRepository.save(new Dish(null, "Nước Ngọt (Coca/Pepsi)", new BigDecimal("15000"), "/images/placeholders/menu-item.svg", "Nước uống", true, defaultBranch));
                 System.out.println("--> Seeded Menu Dishes successfully!");
             } else {
                 List<Dish> list = dishRepository.findByBranchId(defaultBranch.getId());

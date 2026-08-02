@@ -28,7 +28,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/h2-console/**")
                 .ignoringRequestMatchers("/api/**")
-                .ignoringRequestMatchers("/order/place", "/register", "/forgot-password", "/profile/**", "/api/favorites/**")
+                .ignoringRequestMatchers("/order/place", "/register", "/forgot-password", "/api/favorites/**")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.disable()) // Required for H2 Console
@@ -49,8 +49,11 @@ public class SecurityConfig {
                     "/h2-console/**",
                     "/api/favorites/**"
                 ).permitAll()
+                .requestMatchers("/api/admin/audit-logs/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/reports/**").hasRole("ADMIN")
                 .requestMatchers("/admin/inventory", "/admin/inventory/**", "/admin/recipes", "/admin/recipes/**").hasAnyRole("ADMIN", "INVENTORY")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/cashier/shifts/**").hasAnyRole("ADMIN", "CASHIER")
                 .requestMatchers("/cashier/**").hasAnyRole("ADMIN", "CASHIER")
                 .requestMatchers("/waiter/**").hasAnyRole("ADMIN", "WAITER")
                 .requestMatchers("/kitchen/**").hasAnyRole("ADMIN", "KITCHEN")

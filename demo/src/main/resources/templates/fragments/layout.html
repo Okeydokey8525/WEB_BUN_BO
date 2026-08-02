@@ -351,7 +351,13 @@
                     <a href="/admin/inventory"><i class="fa-solid fa-warehouse"></i> Kho nguyên liệu</a>
                 </li>
                 <li th:class="${activeTab == 'recipes' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''INVENTORY'')')}">
-                    <a href="/admin/recipes"><i class="fa-solid fa-book-open"></i> Công thức món</a>
+                    <a href="/admin/recipes"><i class="fa-solid fa-book-open"></i> Công thức nấu ăn</a>
+                </li>
+                <li th:class="${activeTab == 'reports' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                    <a href="/admin/reports"><i class="fa-solid fa-chart-line"></i> Báo cáo doanh thu</a>
+                </li>
+                <li th:class="${activeTab == 'audit' ? 'admin-menu-item active' : 'admin-menu-item'}" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                    <a href="/admin/audit-logs"><i class="fa-solid fa-clipboard-list"></i> Nhật ký hoạt động</a>
                 </li>
             </ul>
         </div>

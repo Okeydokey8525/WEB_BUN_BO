@@ -6,10 +6,15 @@ spring:
   servlet:
     multipart:
       max-file-size: 5MB
-      max-request-size: 5MB
+      max-request-size: 6MB
   web:
     resources:
       static-locations: classpath:/static/,file:uploads/
+
+app:
+  upload-dir: ${APP_UPLOAD_DIR:uploads}
+  upload:
+    max-bytes: 5242880
 
 server:
   servlet:

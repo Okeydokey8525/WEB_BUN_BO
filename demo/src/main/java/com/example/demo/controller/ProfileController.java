@@ -4,6 +4,7 @@ import com.example.demo.model.Dish;
 import com.example.demo.model.User;
 import com.example.demo.repository.DishRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,6 +25,7 @@ public class ProfileController {
     private final UserRepository userRepository;
     private final DishRepository dishRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ProfileService profileService;
 
     private User getCurrentAuthenticatedUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -45,25 +49,23 @@ public class ProfileController {
     @PostMapping("/profile/update")
     public String updateProfile(
             @RequestParam("fullName") String fullName,
-            @RequestParam(value = "avatarUrl", required = false) String avatarUrl,
             @RequestParam(value = "phone", required = false) String phone,
             @RequestParam(value = "address", required = false) String address,
-            @RequestParam(value = "email", required = false) String email) {
+            @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "avatarFile", required = false) MultipartFile avatarFile,
+            RedirectAttributes redirectAttributes) {
 
         User user = getCurrentAuthenticatedUser();
         if (user == null) {
             return "redirect:/login";
         }
 
-        user.setFullName(fullName);
-        if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
-            user.setAvatarUrl(avatarUrl.trim());
+        try {
+            profileService.updateProfile(user, fullName, phone, address, email, avatarFile);
+        } catch (com.example.demo.exception.FileStorageException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/profile";
         }
-        user.setPhone(phone);
-        user.setAddress(address);
-        user.setEmail(email);
-
-        userRepository.save(user);
         return "redirect:/profile?success=profile_updated";
     }
 

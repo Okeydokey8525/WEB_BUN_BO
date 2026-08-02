@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Báo cáo doanh thu')}"></head>
+<body>
+<div class="admin-layout">
+    <aside th:replace="~{fragments/layout :: admin_sidebar('reports')}"></aside>
+    <main class="admin-content report-page">
+        <div th:replace="~{fragments/layout :: admin_topbar('Báo cáo doanh thu', 'Tìm báo cáo...')}"></div>
+        <header class="admin-page-header">
+            <div class="admin-page-heading"><span class="admin-page-icon"><i class="fa-solid fa-chart-line"></i></span><div><h1>Báo cáo doanh thu</h1><p>Theo dõi doanh thu, thanh toán, món bán chạy và vận hành theo khoảng ngày.</p></div></div>
+        </header>
+        <form id="report-filter" class="admin-filter-card" novalidate>
+            <div class="admin-filter-grid">
+                <label for="from">Từ ngày<input id="from" type="date" required></label>
+                <label for="to">Đến ngày<input id="to" type="date" required></label>
+            </div>
+            <div class="admin-filter-actions"><button class="btn-primary" type="submit"><i class="fa-solid fa-filter"></i> Áp dụng</button><button class="btn-secondary" type="reset"><i class="fa-solid fa-rotate-left"></i> Đặt lại</button></div>
+            <p id="report-error" class="error-state" aria-live="polite" hidden></p>
+        </form>
+        <section class="report-kpi-grid" aria-live="polite">
+            <article class="report-kpi-card"><i class="fa-solid fa-sack-dollar"></i><span>Tổng doanh thu</span><strong id="gross-kpi">—</strong></article>
+            <article class="report-kpi-card"><i class="fa-solid fa-arrow-rotate-left"></i><span>Hoàn tiền</span><strong id="refund-kpi">—</strong></article>
+            <article class="report-kpi-card"><i class="fa-solid fa-chart-simple"></i><span>Doanh thu thuần</span><strong id="net-kpi">—</strong></article>
+            <article class="report-kpi-card"><i class="fa-solid fa-receipt"></i><span>Giao dịch</span><strong id="transactions-kpi">—</strong></article>
+            <article class="report-kpi-card"><i class="fa-solid fa-calculator"></i><span>Giá trị trung bình</span><strong id="average-kpi">—</strong></article>
+            <article class="report-kpi-card"><i class="fa-solid fa-clock"></i><span>Tổng số ca</span><strong id="shifts-kpi">—</strong></article>
+        </section>
+        <section class="admin-data-card"><div class="admin-card-header"><div><h2>Doanh thu theo ngày</h2><p>Doanh thu đã hoàn tất theo từng ngày.</p></div><a id="daily-csv" class="csv-download"><i class="fa-solid fa-download"></i> Tải CSV</a></div><div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Ngày</th><th class="numeric">Gộp</th><th class="numeric">Hoàn</th><th class="numeric">Thuần</th><th class="numeric">Giao dịch</th></tr></thead><tbody id="daily-body"></tbody></table></div></section>
+        <section class="admin-data-card"><div class="admin-card-header"><div><h2>Phương thức thanh toán</h2><p>Phân rã giao dịch đã hoàn tất.</p></div><a id="methods-csv" class="csv-download"><i class="fa-solid fa-download"></i> Tải CSV</a></div><div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Phương thức</th><th class="numeric">Gộp</th><th class="numeric">Hoàn</th><th class="numeric">Thuần</th></tr></thead><tbody id="methods-body"></tbody></table></div></section>
+        <section class="admin-data-card"><div class="admin-card-header"><div><h2>Món bán chạy</h2><p>Top món theo doanh thu trong khoảng lọc.</p></div><a id="dishes-csv" class="csv-download"><i class="fa-solid fa-download"></i> Tải CSV</a></div><div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Món ăn</th><th class="numeric">Số lượng</th><th class="numeric">Doanh thu</th></tr></thead><tbody id="dishes-body"></tbody></table></div></section>
+        <section class="admin-data-card"><div class="admin-card-header"><div><h2>Tiêu thụ nguyên liệu</h2><p>Lượng nguyên liệu đã trừ và hoàn kho.</p></div><a id="inventory-csv" class="csv-download"><i class="fa-solid fa-download"></i> Tải CSV</a></div><div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Nguyên liệu</th><th>Đơn vị</th><th class="numeric">Tiêu thụ ròng</th></tr></thead><tbody id="inventory-body"></tbody></table></div></section>
+        <section class="admin-data-card"><div class="admin-card-header"><div><h2>Báo cáo ca làm việc</h2><p>Đối soát các ca mở trong khoảng đã chọn.</p></div><a id="shifts-csv" class="csv-download"><i class="fa-solid fa-download"></i> Tải CSV</a></div><div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Thu ngân</th><th>Trạng thái</th><th class="numeric">Doanh thu</th><th class="numeric">Số đơn</th></tr></thead><tbody id="shifts-body"></tbody></table></div></section>
+        <a id="revenue-csv" class="visually-hidden">Tải CSV tổng doanh thu</a>
+    </main>
+</div>
+<script src="/js/admin-reports.js"></script>
+</body>
+</html>

@@ -9,6 +9,7 @@ import com.example.demo.security.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,9 +17,12 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DishService {
+    private static final String MENU_PLACEHOLDER = "/images/placeholders/menu-item.svg";
+
     private final DishRepository dishRepository;
     private final BranchAccessService branchAccessService;
     private final CurrentUserService currentUserService;
+    private final FileStorageService fileStorageService;
 
     public List<Dish> listForCurrentBranch() {
         return dishRepository.findByBranchId(branchAccessService.requireScopedBranchId());
@@ -33,26 +37,46 @@ public class DishService {
     @Transactional
     public void delete(Long id) {
         Dish dish = requireDishForCurrentBranch(id);
+        String imagePath = dish.getImageUrl();
         dishRepository.delete(dish);
+        dishRepository.flush();
+        fileStorageService.deleteIfManaged(imagePath);
     }
 
     @Transactional
-    public void save(Long id, String name, BigDecimal price, String category, String imageUrl) {
+    public void save(Long id, String name, BigDecimal price, String category, MultipartFile imageFile) {
         Branch branch = currentUserService.requireCurrentBranch();
-        Dish dish = id == null ? new Dish() : requireDishForCurrentBranch(id);
-        if (id == null) {
+        boolean creating = id == null;
+        Dish dish = creating ? new Dish() : requireDishForCurrentBranch(id);
+        String oldImagePath = dish.getImageUrl();
+        String newImagePath = null;
+
+        if (creating) {
             dish.setBranch(branch);
         }
         dish.setName(name);
         dish.setPrice(price);
         dish.setCategory(category);
-        if (imageUrl != null && !imageUrl.isBlank()) {
-            dish.setImageUrl(imageUrl);
-        } else if (dish.getImageUrl() == null) {
-            dish.setImageUrl("https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop");
+        if (imageFile != null && !imageFile.isEmpty()) {
+            newImagePath = fileStorageService.storeImage(imageFile, "menu");
+            dish.setImageUrl(newImagePath);
+        } else if (creating) {
+            dish.setImageUrl(MENU_PLACEHOLDER);
         }
-        dish.setAvailable(true);
-        dishRepository.save(dish);
+        if (creating) {
+            dish.setAvailable(true);
+        }
+
+        try {
+            dishRepository.saveAndFlush(dish);
+        } catch (RuntimeException ex) {
+            fileStorageService.deleteIfManaged(newImagePath);
+            throw ex;
+        }
+
+        if (newImagePath != null && !newImagePath.equals(oldImagePath)) {
+            fileStorageService.deleteIfManaged(oldImagePath);
+        }
     }
 
     private Dish requireDishForCurrentBranch(Long id) {

@@ -1,0 +1,17 @@
+package com.example.demo.model.enums;
+
+public enum AuditAction {
+    SHIFT_OPEN,
+    SHIFT_CLOSE,
+    PAY_ORDER,
+    REFUND_ORDER,
+    STOCK_IN,
+    STOCK_ADJUST,
+    ORDER_STOCK_CONSUMED,
+    ORDER_STOCK_REVERSED,
+    RECIPE_CREATED,
+    RECIPE_ITEM_ADDED,
+    RECIPE_ITEM_REMOVED,
+    REPORT_VIEWED,
+    REPORT_EXPORTED
+}

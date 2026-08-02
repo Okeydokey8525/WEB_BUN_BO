@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Ca làm việc</title></head>
+<body>
+<p th:if="${successMessage}" th:text="${successMessage}"></p>
+<p th:if="${errorMessage}" th:text="${errorMessage}"></p>
+
+<section th:if="${currentShift != null}">
+    <h1>Ca hiện tại</h1>
+    <p th:text="${currentShift.status}">OPEN</p>
+    <a th:href="@{/cashier/shifts/{id}(id=${currentShift.shiftId})}">Chi tiết ca</a>
+</section>
+
+<section th:if="${openShiftRequest != null}">
+    <h1>Mở ca</h1>
+    <p th:if="${openingCashError}" th:text="${openingCashError}"></p>
+    <form th:action="@{/cashier/shifts/open}" th:object="${openShiftRequest}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <input type="number" step="1" th:field="*{openingCash}">
+        <textarea th:field="*{note}"></textarea>
+        <button type="submit">Mở ca</button>
+    </form>
+</section>
+
+<section th:if="${shifts != null}">
+    <h1>Lịch sử ca</h1>
+    <ul><li th:each="item : ${shifts}" th:text="${item.shiftId}">Shift</li></ul>
+</section>
+
+<section th:if="${shift != null}">
+    <h1>Chi tiết ca</h1>
+    <p th:text="${shift.status}">OPEN</p>
+    <p th:if="${actualCashError}" th:text="${actualCashError}"></p>
+    <form th:if="${closeShiftRequest != null}" th:action="@{/cashier/shifts/{id}/close(id=${shift.shiftId})}" th:object="${closeShiftRequest}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <input type="hidden" th:field="*{shiftId}">
+        <input type="number" step="1" th:field="*{actualCash}">
+        <textarea th:field="*{note}"></textarea>
+        <button type="submit">Đóng ca</button>
+    </form>
+</section>
+</body>
+</html>

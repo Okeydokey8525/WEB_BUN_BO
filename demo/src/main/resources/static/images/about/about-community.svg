@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title desc">
+  <title id="title">Không gian cộng đồng</title>
+  <desc id="desc">Minh họa những người cùng quây quần quanh bàn ăn.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffaf0"></stop>
+      <stop offset="1" stop-color="#fef3c7"></stop>
+    </linearGradient>
+    <linearGradient id="table" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#92400e"></stop>
+      <stop offset="1" stop-color="#78350f"></stop>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="520" rx="32" fill="url(#bg)"></rect>
+
+  <circle cx="400" cy="300" r="135" fill="#fde68a" opacity=".6"></circle>
+  <ellipse cx="400" cy="330" rx="180" ry="72" fill="url(#table)"></ellipse>
+
+  <circle cx="400" cy="180" r="42" fill="#fdba74"></circle>
+  <path d="M345 265 Q400 205 455 265" fill="#c2410c"></path>
+
+  <circle cx="250" cy="245" r="38" fill="#fed7aa"></circle>
+  <path d="M205 330 Q250 275 295 330" fill="#ea580c"></path>
+
+  <circle cx="550" cy="245" r="38" fill="#fed7aa"></circle>
+  <path d="M505 330 Q550 275 595 330" fill="#b45309"></path>
+
+  <circle cx="330" cy="345" r="28" fill="#f8fafc"></circle>
+  <circle cx="400" cy="350" r="28" fill="#f8fafc"></circle>
+  <circle cx="470" cy="345" r="28" fill="#f8fafc"></circle>
+
+  <path d="M315 345h30M385 350h30M455 345h30" stroke="#f59e0b" stroke-width="8" stroke-linecap="round"></path>
+</svg>

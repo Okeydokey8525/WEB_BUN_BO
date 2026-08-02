@@ -8,6 +8,7 @@ import com.example.demo.model.*;
 import com.example.demo.repository.*;
 import com.example.demo.security.BranchAccessService;
 import com.example.demo.service.RecipeService;
+import com.example.demo.service.AuditService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +30,7 @@ class RecipeServiceTests {
     @Mock DishRepository dishRepository;
     @Mock InventoryRepository inventoryRepository;
     @Mock BranchAccessService branchAccessService;
+    @Mock AuditService auditService;
     @InjectMocks RecipeService recipeService;
 
     @Test

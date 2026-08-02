@@ -123,7 +123,7 @@
                         </button>
                         <div class="dish-img-wrapper">
                             <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" th:src="${dish.imageUrl}" th:alt="${dish.name}" class="dish-img">
-                            <img th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" src="https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&auto=format&fit=crop" th:alt="${dish.name}" class="dish-img">
+                            <img th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" src="/images/placeholders/menu-item.svg" th:alt="${dish.name}" class="dish-img">
                             <span class="dish-category-badge" th:text="${dish.category}">Bún Bò</span>
                         </div>
                         <div class="dish-info" style="display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
